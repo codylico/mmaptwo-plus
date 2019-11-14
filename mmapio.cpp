@@ -8,7 +8,6 @@
 #include "mmapio.hpp"
 #include <cstdlib>
 #include <stdexcept>
-#include <ios>
 
 namespace mmapio {
   struct mode_tag {
@@ -45,14 +44,15 @@ namespace mmapio {
 
 #if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
 #  include <unistd.h>
-#if (defined __cplusplus) && (__cplusplus >= 201103L)
-#  include <cwchar>
-#  include <cstring>
-#endif /*__cplusplus*/
+#  if (defined __cplusplus) && (__cplusplus >= 201103L)
+#    include <cwchar>
+#    include <cstring>
+#  endif /*__cplusplus*/
 #  include <fcntl.h>
 #  include <sys/mman.h>
 #  include <sys/stat.h>
 #  include <cerrno>
+#  include <limits>
 
 namespace mmapio {
   MMAPIO_PLUS_API
@@ -147,6 +147,7 @@ namespace mmapio {
 #  include <cerrno>
 
 namespace mmapio {
+  MMAPIO_PLUS_API
   class mmapio_win32 : public mmapio_i {
   private:
     unsigned char* ptr;
@@ -282,9 +283,8 @@ namespace mmapio {
       std::memset(&mbs, 0, sizeof(mbs));
       ns = std::wcsrtombs(nullptr, &test_nm, 0, &mbs);
     }
-    if (ns == (size_t)(-1)
-    ||  ns == ~((size_t)0))
-    {
+    if (ns == static_cast<size_t>(-1)
+    &&  ns == std::numeric_limits<size_t>::max()) {
       /* conversion error caused by bad sequence, so */return nullptr;
     }
     out = static_cast<char*>(calloc(ns+1, sizeof(char)));
@@ -716,8 +716,7 @@ namespace mmapio {
       mmapio_i* out;
       fd = ::open(nm, mode_rw_cvt(mt.mode));
       if (fd == -1) {
-        /* can't open file, so */
-          throw std::runtime_error(strerror(errno));
+        /* can't open file, so */throw std::runtime_error(strerror(errno));
       }
       return new mmapio_unix(fd, mt, sz, off);
     } catch (...) {
