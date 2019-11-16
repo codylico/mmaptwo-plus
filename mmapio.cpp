@@ -766,7 +766,7 @@ namespace mmapio {
     }
   }
 #elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
-  mmapio_i* mmapio_open
+  mmapio_i* open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     try {
@@ -795,7 +795,7 @@ namespace mmapio {
     }
   }
 
-  mmapio_i* mmapio_u8open
+  mmapio_i* u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -832,7 +832,8 @@ namespace mmapio {
   }
 
   mmapio_i* wopen
-    (wchar_t const* nm, char const* mode, size_t sz, size_t off)
+    ( wchar_t const* nm, char const* mode, size_t sz, size_t off,
+      bool throwing)
   {
     try {
       HANDLE fd;
