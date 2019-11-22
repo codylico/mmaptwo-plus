@@ -41,7 +41,15 @@ namespace mmapio {
     mode_write = 0x77,
     mode_end = 0x65,
     mode_private = 0x70,
-    mode_bequeath = 0x71 /* TODO check API symbol */
+
+    /**
+     * \note If not using bequeath, the caller of
+     *   \link mmapio::open \endlink, \link mmapio::u8open \endlink or
+     *   \link mmapio::wopen \endlink must give time for the function
+     *   to return. Otherwise, the file descriptor of the mapped file
+     *   may leak.
+     */
+    mode_bequeath = 0x71
   };
 
   /**
@@ -81,6 +89,16 @@ namespace mmapio {
    */
   MMAPIO_PLUS_API
   int get_os(void);
+
+  /**
+   * \brief Check whether the library can handle possible race conditions
+   *   involving file bequeath prevention. Such prevention may be necessary
+   *   when starting child processes.
+   * \return nonzero if file bequeath prevention is race-proof, zero
+   *   otherwise
+   */
+  MMAPIO_PLUS_API
+  bool check_bequeath_stop(void);
   /* END   configurations */
 
   /* BEGIN open functions */

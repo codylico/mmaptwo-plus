@@ -4,7 +4,7 @@
  * \author Cody Licorish (svgmovement@gmail.com)
  */
 #define MMAPIO_PLUS_WIN32_DLL_INTERNAL
-#define _POSIX_C_SOURCE 200112L
+#define _POSIX_C_SOURCE 200809L
 #include "mmapio.hpp"
 #include <cstdlib>
 #include <stdexcept>
@@ -303,11 +303,16 @@ namespace mmapio {
   }
 
   int mode_rw_cvt(int mmode) {
+#if (defined O_CLOEXEC)
+    int constexpr fast_no_bequeath = static_cast<int>(O_CLOEXEC);
+#else
+    int constexpr fast_no_bequeath = 0;
+#endif /*O_CLOEXEC*/
     switch (mmode) {
     case mode_write:
-      return O_RDWR;
+      return O_RDWR|fast_no_bequeath;
     case mode_read:
-      return O_RDONLY;
+      return O_RDONLY|fast_no_bequeath;
     default:
       return 0;
     }
@@ -503,6 +508,22 @@ namespace mmapio {
     size_t fullsize;
     size_t fullshift;
     off_t fulloff;
+    /* assign the close-on-exec flag */ {
+      int const old_flags = ::fcntl(fd, F_GETFD);
+      int bequeath_break = 0;
+      if (old_flags < 0) {
+        bequeath_break = 1;
+      } else if (mt.bequeath) {
+        bequeath_break = (::fcntl(fd, F_SETFD, old_flags&(~FD_CLOEXEC)) < 0);
+      } else {
+        bequeath_break = (::fcntl(fd, F_SETFD, old_flags|FD_CLOEXEC) < 0);
+      }
+      if (bequeath_break) {
+        ::close(fd);
+        throw std::runtime_error
+          ("mmapio::mmapio_unix::mmapio_unix: bequeath negotiation failure");
+      }
+    }
     if (mt.end) /* fix map size */{
       size_t const xsz = file_size_e(fd);
       if (xsz < off)
@@ -702,6 +723,20 @@ namespace mmapio {
   //BEGIN configuration functions
   int get_os(void) {
     return (int)(MMAPIO_PLUS_OS);
+  }
+
+  bool check_bequeath_stop(void) {
+#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
+#  if (defined O_CLOEXEC)
+    return true;
+#  else
+    return false;
+#  endif /*O_CLOEXEC*/
+#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
+    return true;
+#else
+    return static_cast<bool>(-1);
+#endif /*MMAPIO_PLUS_OS*/
   }
   //END   configuration functions
 
