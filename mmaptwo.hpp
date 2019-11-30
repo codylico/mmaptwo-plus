@@ -1,27 +1,27 @@
 /*
- * \file mmapio.hpp
+ * \file mmaptwo.hpp
  * \brief Memory-mapped files
  * \author Cody Licorish (svgmovement@gmail.com)
  */
-#ifndef hg_MMapIO_Plus_mmapIo_H_
-#define hg_MMapIO_Plus_mmapIo_H_
+#ifndef hg_MMapTwo_Plus_mmapTwo_H_
+#define hg_MMapTwo_Plus_mmapTwo_H_
 
 #include <cstddef>
 
-#ifdef MMAPIO_PLUS_WIN32_DLL
-#  ifdef MMAPIO_PLUS_WIN32_DLL_INTERNAL
-#    define MMAPIO_PLUS_API __declspec(dllexport)
+#ifdef MMAPTWO_PLUS_WIN32_DLL
+#  ifdef MMAPTWO_PLUS_WIN32_DLL_INTERNAL
+#    define MMAPTWO_PLUS_API __declspec(dllexport)
 #  else
-#    define MMAPIO_PLUS_API __declspec(dllimport)
-#  endif /*MMAPIO_PLUS_WIN32_DLL_INTERNAL*/
+#    define MMAPTWO_PLUS_API __declspec(dllimport)
+#  endif /*MMAPTWO_PLUS_WIN32_DLL_INTERNAL*/
 #else
-#  define MMAPIO_PLUS_API
-#endif /*MMAPIO_PLUS_WIN32_DLL*/
+#  define MMAPTWO_PLUS_API
+#endif /*MMAPTWO_PLUS_WIN32_DLL*/
 
 /**
  * \brief Memory-mapped files library
  */
-namespace mmapio {
+namespace mmaptwo {
   using std::size_t;
 
   /**
@@ -44,8 +44,8 @@ namespace mmapio {
 
     /**
      * \note If not using bequeath, the caller of
-     *   \link mmapio::open \endlink, \link mmapio::u8open \endlink or
-     *   \link mmapio::wopen \endlink must give time for the function
+     *   \link mmaptwo::open \endlink, \link mmaptwo::u8open \endlink or
+     *   \link mmaptwo::wopen \endlink must give time for the function
      *   to return. Otherwise, the file descriptor of the mapped file
      *   may leak.
      */
@@ -55,13 +55,13 @@ namespace mmapio {
   /**
    * \brief Memory-mapped input-output interface.
    */
-  MMAPIO_PLUS_API
-  class mmapio_i {
+  MMAPTWO_PLUS_API
+  class mmaptwo_i {
   public:
     /**
      * \brief Destructor; closes the file and frees the space.
      */
-    virtual ~mmapio_i(void) = 0;
+    virtual ~mmaptwo_i(void) = 0;
 
     /**
      * \brief Acquire a lock to the space.
@@ -85,9 +85,9 @@ namespace mmapio {
   /* BEGIN configurations */
   /**
    * \brief Check the library's target backend.
-   * \return a \link mmapio::os \endlink value
+   * \return a \link mmaptwo::os \endlink value
    */
-  MMAPIO_PLUS_API
+  MMAPTWO_PLUS_API
   int get_os(void);
 
   /**
@@ -97,7 +97,7 @@ namespace mmapio {
    * \return nonzero if file bequeath prevention is race-proof, zero
    *   otherwise
    */
-  MMAPIO_PLUS_API
+  MMAPTWO_PLUS_API
   bool check_bequeath_stop(void);
   /* END   configurations */
 
@@ -115,8 +115,8 @@ namespace mmapio {
    * \note On Windows, this function uses `CreateFileA` directly.
    * \note On Unix, this function uses the `open` system call directly.
    */
-  MMAPIO_PLUS_API
-  mmapio_i* open
+  MMAPTWO_PLUS_API
+  mmaptwo_i* open
     ( char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing=true);
 
@@ -134,8 +134,8 @@ namespace mmapio {
    *   UTF-8 to UTF-16, then uses `CreateFileW` on the result.
    * \note On Unix, this function uses the `open` system call directly.
    */
-  MMAPIO_PLUS_API
-  mmapio_i* u8open
+  MMAPTWO_PLUS_API
+  mmaptwo_i* u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing=true);
 
@@ -154,11 +154,11 @@ namespace mmapio {
    *   to a multibyte character string, then passes the result to
    *   the `open` system call. Use `setlocale` in advance if necessary.
    */
-  MMAPIO_PLUS_API
-  mmapio_i* wopen
+  MMAPTWO_PLUS_API
+  mmaptwo_i* wopen
     ( wchar_t const* nm, char const* mode, size_t sz, size_t off,
       bool throwing=true);
   /* END   open functions */
 };
 
-#endif /*hg_MMapIO_Plus_mmapIo_H_*/
+#endif /*hg_MMapTwo_Plus_mmapTwo_H_*/

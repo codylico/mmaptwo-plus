@@ -1,15 +1,15 @@
 /*
- * \file mmapio.cpp
+ * \file mmaptwo.cpp
  * \brief Memory-mapped files
  * \author Cody Licorish (svgmovement@gmail.com)
  */
-#define MMAPIO_PLUS_WIN32_DLL_INTERNAL
+#define MMAPTWO_PLUS_WIN32_DLL_INTERNAL
 #define _POSIX_C_SOURCE 200809L
-#include "mmapio.hpp"
+#include "mmaptwo.hpp"
 #include <cstdlib>
 #include <stdexcept>
 
-namespace mmapio {
+namespace mmaptwo {
   struct mode_tag {
     char mode;
     char end;
@@ -18,31 +18,31 @@ namespace mmapio {
   };
 
   /**
-   * \brief Extract a mmapio mode tag from a mode text.
+   * \brief Extract a mmaptwo mode tag from a mode text.
    * \param mmode the value to parse
-   * \return a mmapio mode tag
+   * \return a mmaptwo mode tag
    */
   static struct mode_tag mode_parse(char const* mmode);
 };
 
-#define MMAPIO_OS_UNIX 1
-#define MMAPIO_OS_WIN32 2
+#define MMAPTWO_OS_UNIX 1
+#define MMAPTWO_OS_WIN32 2
 
 /*
  * inspired by https://stackoverflow.com/a/30971057
  * and https://stackoverflow.com/a/11351171
  */
-#ifndef MMAPIO_PLUS_OS
+#ifndef MMAPTWO_PLUS_OS
 #  if (defined _WIN32)
-#    define MMAPIO_PLUS_OS MMAPIO_OS_WIN32
+#    define MMAPTWO_PLUS_OS MMAPTWO_OS_WIN32
 #  elif (defined __unix__) || (defined(__APPLE__)&&defined(__MACH__))
-#    define MMAPIO_PLUS_OS MMAPIO_OS_UNIX
+#    define MMAPTWO_PLUS_OS MMAPTWO_OS_UNIX
 #  else
-#    define MMAPIO_PLUS_OS 0
+#    define MMAPTWO_PLUS_OS 0
 #  endif
-#endif /*MMAPIO_PLUS_OS*/
+#endif /*MMAPTWO_PLUS_OS*/
 
-#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
 #  include <unistd.h>
 #  if (defined __cplusplus) && (__cplusplus >= 201103L)
 #    include <cwchar>
@@ -54,9 +54,9 @@ namespace mmapio {
 #  include <cerrno>
 #  include <limits>
 
-namespace mmapio {
-  MMAPIO_PLUS_API
-  class mmapio_unix : public mmapio_i {
+namespace mmaptwo {
+  MMAPTWO_PLUS_API
+  class mmaptwo_unix : public mmaptwo_i {
   private:
     unsigned char* ptr;
     size_t len;
@@ -72,14 +72,14 @@ namespace mmapio {
      * \param off offset from start of file
      * \return an interface on success, NULL otherwise
      */
-    mmapio_unix
+    mmaptwo_unix
       (int fd, struct mode_tag const mmode, size_t sz, size_t off);
 
     /**
      * \brief Destructor; closes the file and frees the space.
      * \param m map instance
      */
-    ~mmapio_unix(void) override;
+    ~mmaptwo_unix(void) override;
 
   public:
     /**
@@ -112,21 +112,21 @@ namespace mmapio {
   static char* wctomb(wchar_t const* nm);
 
   /**
-   * \brief Convert a mmapio mode text to a POSIX `open` flag.
+   * \brief Convert a mmaptwo mode text to a POSIX `open` flag.
    * \param mmode the value to convert
    * \return an `open` flag on success, zero otherwise
    */
   static int mode_rw_cvt(int mmode);
 
   /**
-   * \brief Convert a mmapio mode text to a POSIX `mmap` protection flag.
+   * \brief Convert a mmaptwo mode text to a POSIX `mmap` protection flag.
    * \param mmode the value to convert
    * \return an `mmap` protection flag on success, zero otherwise
    */
   static int mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmapio mode text to a POSIX `mmap` others' flag.
+   * \brief Convert a mmaptwo mode text to a POSIX `mmap` others' flag.
    * \param mprivy the private flag to convert
    * \return an `mmap` others' flag on success, zero otherwise
    */
@@ -140,15 +140,15 @@ namespace mmapio {
   static size_t file_size_e(int fd);
 };
 
-#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <climits>
 #  include <cerrno>
 
-namespace mmapio {
-  MMAPIO_PLUS_API
-  class mmapio_win32 : public mmapio_i {
+namespace mmaptwo {
+  MMAPTWO_PLUS_API
+  class mmaptwo_win32 : public mmaptwo_i {
   private:
     unsigned char* ptr;
     size_t len;
@@ -165,13 +165,13 @@ namespace mmapio {
      * \param off offset from start of file
      * \return an interface on success, NULL otherwise
      */
-    mmapio_win32
+    mmaptwo_win32
       (HANDLE fd, struct mode_tag const mmode, size_t sz, size_t off);
 
     /**
      * \brief Destructor; closes the file and frees the space.
      */
-    ~mmapio_win32(void) override;
+    ~mmaptwo_win32(void) override;
 
   public:
     /**
@@ -194,7 +194,7 @@ namespace mmapio {
   };
 
   /**
-   * \brief Convert a mmapio mode text to a `CreateFile.` desired access flag.
+   * \brief Convert a mmaptwo mode text to a `CreateFile.` desired access flag.
    * \param mmode the value to convert
    * \return an `CreateFile.` desired access flag on success, zero otherwise
    */
@@ -225,7 +225,7 @@ namespace mmapio {
   static size_t file_size_e(HANDLE fd);
 
   /**
-   * \brief Convert a mmapio mode text to a
+   * \brief Convert a mmaptwo mode text to a
    *   `CreateFileMapping.` protection flag.
    * \param mmode the value to convert
    * \return a `CreateFileMapping.` protection flag on success, zero otherwise
@@ -233,16 +233,16 @@ namespace mmapio {
   static DWORD mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmapio mode text to a `MapViewOfFile`
+   * \brief Convert a mmaptwo mode text to a `MapViewOfFile`
    *   desired access flag.
    * \param mmode the value to convert
    * \return a `MapViewOfFile` desired access flag on success, zero otherwise
    */
   static DWORD mode_access_cvt(struct mode_tag const mt);
 };
-#endif /*MMAPIO_PLUS_OS*/
+#endif /*MMAPTWO_PLUS_OS*/
 
-namespace mmapio {
+namespace mmaptwo {
   //BEGIN static functions
   struct mode_tag mode_parse(char const* mmode) {
     struct mode_tag out = { 0, 0, 0, 0 };
@@ -271,7 +271,7 @@ namespace mmapio {
     return out;
   }
 
-#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
   char* wctomb(wchar_t const* nm) {
 #if (defined __cplusplus) && (__cplusplus >= 201103L)
     /* use multibyte conversion */
@@ -343,7 +343,7 @@ namespace mmapio {
       } else return (size_t)(fsi.st_size);
     }
   }
-#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
   DWORD mode_rw_cvt(int mmode) {
     switch (mmode) {
     case mode_write:
@@ -490,18 +490,18 @@ namespace mmapio {
     }
     return flags;
   }
-#endif /*MMAPIO_PLUS_OS*/
+#endif /*MMAPTWO_PLUS_OS*/
   //END   static functions
 };
 
-namespace mmapio {
+namespace mmaptwo {
   //BEGIN public methods
-  mmapio_i::~mmapio_i(void) {
+  mmaptwo_i::~mmaptwo_i(void) {
     return;
   }
 
-#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
-  mmapio_unix::mmapio_unix
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
+  mmaptwo_unix::mmaptwo_unix
     (int fd, struct mode_tag const mt, size_t sz, size_t off)
   {
     void *ptr;
@@ -521,7 +521,8 @@ namespace mmapio {
       if (bequeath_break) {
         ::close(fd);
         throw std::runtime_error
-          ("mmapio::mmapio_unix::mmapio_unix: bequeath negotiation failure");
+          ( "mmaptwo::mmaptwo_unix::mmaptwo_unix:"
+            " bequeath negotiation failure");
       }
     }
     if (mt.end) /* fix map size */{
@@ -542,7 +543,7 @@ namespace mmapio {
           close(fd);
           errno = ERANGE;
           throw std::length_error
-            ("mmapio::mmapio_unix::mmapio_unix: range fix failure");
+            ("mmaptwo::mmaptwo_unix::mmaptwo_unix: range fix failure");
         } else fullsize += fullshift;
       } else fulloff = (off_t)off;
     }
@@ -551,7 +552,7 @@ namespace mmapio {
     if (!ptr) {
       close(fd);
       throw std::runtime_error
-        ("mmapio::mmapio_unix::mmapio_unix: mmap failure");
+        ("mmaptwo::mmaptwo_unix::mmaptwo_unix: mmap failure");
     }
     /* initialize the interface */{
       this->ptr = static_cast<unsigned char*>(ptr);
@@ -562,7 +563,7 @@ namespace mmapio {
     return;
   }
 
-  mmapio_unix::~mmapio_unix(void) {
+  mmaptwo_unix::~mmaptwo_unix(void) {
     munmap(this->ptr, this->len);
     this->ptr = nullptr;
     close(this->fd);
@@ -570,19 +571,19 @@ namespace mmapio {
     return;
   }
 
-  void* mmapio_unix::acquire(void) {
+  void* mmaptwo_unix::acquire(void) {
     return this->ptr+this->shift;
   }
 
-  void mmapio_unix::release(void* p) {
+  void mmaptwo_unix::release(void* p) {
     return;
   }
 
-  size_t mmapio_unix::length(void) const {
+  size_t mmaptwo_unix::length(void) const {
     return this->len-this->shift;
   }
-#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
-  mmapio_win32::mmapio_win32
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
+  mmaptwo_win32::mmaptwo_win32
     (HANDLE fd, struct mode_tag const mt, size_t sz, size_t off)
   {
     /*
@@ -604,13 +605,13 @@ namespace mmapio {
         /* reject non-ending zero parameter */
         CloseHandle(fd);
         throw std::invalid_argument
-          ("mmapio_win32::mmapio_win32: offset too far from start of file");
+          ("mmaptwo_win32::mmaptwo_win32: offset too far from start of file");
       } else sz = xsz-off;
     } else if (sz == 0) {
       /* reject non-ending zero parameter */
       CloseHandle(fd);
       throw std::invalid_argument
-        ("mmapio_win32::mmapio_win32: non-ending zero parameter rejected");
+        ("mmaptwo_win32::mmaptwo_win32: non-ending zero parameter rejected");
     }
     /* fix to allocation granularity */{
       DWORD psize;
@@ -629,7 +630,7 @@ namespace mmapio {
           CloseHandle(fd);
           errno = ERANGE;
           throw std::range_error
-            ("mmapio_win32::mmapio_win32: range fix failure");
+            ("mmaptwo_win32::mmaptwo_win32: range fix failure");
         } else fullsize += fullshift;
         /* adjust the size */{
           size_t size_shift = (fullsize % psize);
@@ -669,7 +670,7 @@ namespace mmapio {
       /* file mapping failed */
       CloseHandle(fd);
       throw std::runtime_error
-        ("mmapio_win32::mmapio_win32: CreateFileMappingA fault");
+        ("mmaptwo_win32::mmaptwo_win32: CreateFileMappingA fault");
     }
     ptr = MapViewOfFile(
         fmd, /*hFileMappingObject*/
@@ -682,7 +683,7 @@ namespace mmapio {
       CloseHandle(fmd);
       CloseHandle(fd);
       throw std::runtime_error
-        ("mmapio_win32::mmapio_win32: MapViewOfFile fault");
+        ("mmaptwo_win32::mmaptwo_win32: MapViewOfFile fault");
     }
     /* initialize the interface */{
       this->ptr = static_cast<unsigned char*>(ptr);
@@ -694,7 +695,7 @@ namespace mmapio {
     return;
   }
 
-  mmapio_win32::~mmapio_win32(void) {
+  mmaptwo_win32::~mmaptwo_win32(void) {
     UnmapViewOfFile(this->ptr);
     this->ptr = nullptr;
     CloseHandle(this->fmd);
@@ -704,63 +705,63 @@ namespace mmapio {
     return;
   }
 
-  void* mmapio_win32::acquire(void) {
+  void* mmaptwo_win32::acquire(void) {
     return this->ptr+this->shift;
   }
 
-  void mmapio_win32::release(void* p) {
+  void mmaptwo_win32::release(void* p) {
     return;
   }
 
-  size_t mmapio_win32::length(void) const {
+  size_t mmaptwo_win32::length(void) const {
     return this->len-this->shift;
   }
-#endif /*MMAPIO_PLUS_OS*/
+#endif /*MMAPTWO_PLUS_OS*/
   //END   public method
 };
 
-namespace mmapio {
+namespace mmaptwo {
   //BEGIN configuration functions
   int get_os(void) {
-    return (int)(MMAPIO_PLUS_OS);
+    return (int)(MMAPTWO_PLUS_OS);
   }
 
   bool check_bequeath_stop(void) {
-#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
 #  if (defined O_CLOEXEC)
     return true;
 #  else
     return false;
 #  endif /*O_CLOEXEC*/
-#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
     return true;
 #else
     return static_cast<bool>(-1);
-#endif /*MMAPIO_PLUS_OS*/
+#endif /*MMAPTWO_PLUS_OS*/
   }
   //END   configuration functions
 
   //BEGIN open functions
-#if MMAPIO_PLUS_OS == MMAPIO_OS_UNIX
-  mmapio_i* open
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
+  mmaptwo_i* open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     try {
       int fd;
       struct mode_tag const mt = mode_parse(mode);
-      mmapio_i* out;
+      mmaptwo_i* out;
       fd = ::open(nm, mode_rw_cvt(mt.mode));
       if (fd == -1) {
         /* can't open file, so */throw std::runtime_error(strerror(errno));
       }
-      return new mmapio_unix(fd, mt, sz, off);
+      return new mmaptwo_unix(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
 
-  mmapio_i* u8open
+  mmaptwo_i* u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -771,14 +772,14 @@ namespace mmapio {
       if (fd == -1) {
         /* can't open file, so */throw std::runtime_error(strerror(errno));
       }
-      return new mmapio_unix(fd, mt, sz, off);
+      return new mmaptwo_unix(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
 
-  mmapio_i* wopen
+  mmaptwo_i* wopen
     (wchar_t const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     try {
@@ -794,14 +795,14 @@ namespace mmapio {
       if (fd == -1) {
         /* can't open file, so */throw std::runtime_error(strerror(errno));
       }
-      return new mmapio_unix(fd, mt, sz, off);
+      return new mmaptwo_unix(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
-#elif MMAPIO_PLUS_OS == MMAPIO_OS_WIN32
-  mmapio_i* open
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
+  mmaptwo_i* open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     try {
@@ -823,14 +824,14 @@ namespace mmapio {
       if (fd == INVALID_HANDLE_VALUE) {
         /* can't open file, so */throw std::runtime_error("can't open file");
       }
-      return new mmapio_win32(fd, mt, sz, off);
+      return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
 
-  mmapio_i* u8open
+  mmaptwo_i* u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -859,14 +860,14 @@ namespace mmapio {
       if (fd == INVALID_HANDLE_VALUE) {
         /* can't open file, so */throw std::runtime_error("can't open file");
       }
-      return new mmapio_win32(fd, mt, sz, off);
+      return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
 
-  mmapio_i* wopen
+  mmaptwo_i* wopen
     ( wchar_t const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -889,14 +890,14 @@ namespace mmapio {
       if (fd == INVALID_HANDLE_VALUE) {
         /* can't open file, so */throw std::runtime_error("can't open file");
       }
-      return new mmapio_win32(fd, mt, sz, off);
+      return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
       if (throwing) throw;
       else return nullptr;
     }
   }
 #else
-  mmapio_i* mmapio_open
+  mmaptwo_i* mmaptwo_open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
@@ -904,7 +905,7 @@ namespace mmapio {
     else return nullptr;
   }
 
-  mmapio_i* mmapio_u8open
+  mmaptwo_i* mmaptwo_u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -913,14 +914,14 @@ namespace mmapio {
     else return nullptr;
   }
 
-  mmapio_i* mmapio_wopen
+  mmaptwo_i* mmaptwo_wopen
     (wchar_t const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
     if (throwing) throw std::runtime_error("unavailable for this system");
     else return nullptr;
   }
-#endif /*MMAPIO_ON_UNIX*/
+#endif /*MMAPTWO_ON_UNIX*/
   //END   open functions
 };
 

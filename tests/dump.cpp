@@ -1,5 +1,5 @@
 
-#include "../mmapio.hpp"
+#include "../mmaptwo.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -7,7 +7,7 @@
 #include <iomanip>
 
 int main(int argc, char **argv) {
-  mmapio::mmapio_i* mi;
+  mmaptwo::mmaptwo_i* mi;
   char const* fname;
   if (argc < 5) {
     std::cerr << "usage: dump (file) (mode) (offset) (length)" << std::endl;
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   }
   fname = argv[1];
   try {
-  mi = mmapio::open(fname, argv[2],
+  mi = mmaptwo::open(fname, argv[2],
     (size_t)std::strtoul(argv[3],nullptr,0),
     (size_t)std::strtoul(argv[4],nullptr,0));
   } catch (std::exception const& e) {
