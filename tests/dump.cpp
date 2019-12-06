@@ -8,24 +8,33 @@
 
 int main(int argc, char **argv) {
   mmaptwo::mmaptwo_i* mi;
+  mmaptwo::page_i* pager;
   char const* fname;
   if (argc < 5) {
-    std::cerr << "usage: dump (file) (mode) (offset) (length)" << std::endl;
+    std::cerr << "usage: dump (file) (mode) (length) (offset)" << std::endl;
     return EXIT_FAILURE;
   }
   fname = argv[1];
   try {
-  mi = mmaptwo::open(fname, argv[2],
-    (size_t)std::strtoul(argv[3],nullptr,0),
-    (size_t)std::strtoul(argv[4],nullptr,0));
+    mi = mmaptwo::open(fname, argv[2],
+      (size_t)std::strtoul(argv[3],nullptr,0),
+      (size_t)std::strtoul(argv[4],nullptr,0));
   } catch (std::exception const& e) {
+    std::cerr << "failed to open file '" << fname << "':" << std::endl;
+    std::cerr << "\t" << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
+  try {
+    pager = mi->acquire(mi->length(), 0);
+  } catch (std::exception const& e) {
+    delete mi;
     std::cerr << "failed to map file '" << fname << "':" << std::endl;
     std::cerr << "\t" << e.what() << std::endl;
     return EXIT_FAILURE;
   }
   /* output the data */{
-    size_t len = mi->length();
-    unsigned char* bytes = (unsigned char*)mi->acquire();
+    size_t len = pager->length();
+    unsigned char* bytes = (unsigned char*)pager->get();
     if (bytes != NULL) {
       size_t i;
       if (len >= std::numeric_limits<size_t>::max()-32)
@@ -53,12 +62,12 @@ int main(int argc, char **argv) {
         }
       }
       std::cout << std::endl;
-      mi->release(bytes);
     } else {
       std::cerr << "mapped file '" << fname <<
         "' gives no bytes?" << std::endl;
     }
   }
+  delete pager;
   delete mi;
   return EXIT_SUCCESS;
 }

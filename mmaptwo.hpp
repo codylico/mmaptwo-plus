@@ -53,34 +53,77 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief Memory-mapped input-output interface.
+   * \brief Memory reading part of memory-mapped input-output interface.
    */
   MMAPTWO_PLUS_API
-  class mmaptwo_i {
+  class page_i {
   public:
     /**
-     * \brief Destructor; closes the file and frees the space.
+     * \brief Destructor; frees the space.
+     * \note The source map instance, which holds the file descriptor,
+     *   remains unaffected by this function.
      */
-    virtual ~mmaptwo_i(void) = 0;
+    virtual ~page_i(void) = 0;
 
     /**
-     * \brief Acquire a lock to the space.
-     * \return pointer to locked space on success, NULL otherwise
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
      */
-    virtual void* acquire(void) = 0;
+    virtual void* get(void) = 0;
 
     /**
-     * \brief Release a lock of the space.
-     * \param p pointer of region to release
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
      */
-    virtual void release(void* p) = 0;
+    virtual void const* get(void) const = 0;
 
     /**
      * \brief Check the length of the mapped area.
      * \return the length of the mapped region exposed by this interface
      */
     virtual size_t length(void) const = 0;
+
+    /**
+     * \brief Check the offset of the mapped area.
+     * \return the offset of the mapped region exposed by this interface
+     * \note Offset is measured from start of source mappable.
+     */
+    virtual size_t offset(void) const = 0;
   };
+
+  /**
+   * \brief File acquisition part of memory-mapped input-output interface.
+   */
+  MMAPTWO_PLUS_API
+  class mmaptwo_i {
+  public:
+    /**
+     * \brief Destructor; closes the file.
+     * \note Will not free any acquired pages!
+     */
+    virtual ~mmaptwo_i(void) = 0;
+
+    /**
+     * \brief Acquire a mapping to the space.
+     * \param siz size of the map to acquire
+     * \param off offset into the file data
+     * \return pointer to a page interface on success, NULL otherwise
+     */
+    virtual page_i* acquire(size_t siz, size_t off) = 0;
+
+    /**
+     * \brief Check the length of the mappable area.
+     * \return the length of the mappable region exposed by this interface
+     */
+    virtual size_t length(void) const = 0;
+
+    /**
+     * \brief Check the length of the mappable area.
+     * \return the length of the mappable region exposed by this interface
+     */
+    virtual size_t offset(void) const = 0;
+  };
+
 
   /* BEGIN configurations */
   /**
@@ -99,6 +142,15 @@ namespace mmaptwo {
    */
   MMAPTWO_PLUS_API
   bool check_bequeath_stop(void);
+
+  /**
+   * \brief Check what this library thinks the page size is.
+   * \return a page size
+   * \note Users of this library should not need this value
+   *   to use the library.
+   */
+  MMAPTWO_PLUS_API
+  size_t get_page_size(void);
   /* END   configurations */
 
   /* BEGIN open functions */
@@ -108,8 +160,8 @@ namespace mmaptwo {
    * \param mode one of 'r' (for readonly) or 'w' (writeable),
    *   optionally followed by 'e' to extend map to end of file,
    *   optionally followed by 'p' to make write changes private
-   * \param sz size in bytes of region to map
-   * \param off file offset of region to map
+   * \param sz size in bytes of region to provide for mapping
+   * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
    * \return an interface on success, NULL otherwise
    * \note On Windows, this function uses `CreateFileA` directly.
@@ -126,8 +178,8 @@ namespace mmaptwo {
    * \brief mode one of 'r' (for readonly) or 'w' (writeable),
    *   optionally followed by 'e' to extend map to end of file,
    *   optionally followed by 'p' to make write changes private
-   * \param sz size in bytes of region to map
-   * \param off file offset of region to map
+   * \param sz size in bytes of region to provide for mapping
+   * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
    * \return an interface on success, NULL otherwise
    * \note On Windows, this function re-encodes the `nm` parameter from
@@ -145,8 +197,8 @@ namespace mmaptwo {
    * \brief mode one of 'r' (for readonly) or 'w' (writeable),
    *   optionally followed by 'e' to extend map to end of file,
    *   optionally followed by 'p' to make write changes private
-   * \param sz size in bytes of region to map
-   * \param off file offset of region to map
+   * \param sz size in bytes of region to provide for mapping
+   * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
    * \return an interface on success, NULL otherwise
    * \note On Windows, this function uses `CreateFileW` directly.

@@ -55,13 +55,77 @@ namespace mmaptwo {
 #  include <limits>
 
 namespace mmaptwo {
+  class mmaptwo_unix;
+
+  MMAPTWO_PLUS_API
+  class page_unix : public page_i {
+  private:
+    void* ptr;
+    size_t len;
+    size_t shift;
+    size_t offnum;
+
+    page_unix(page_unix const& ) = delete;
+    page_unix& operator=(page_unix const& ) = delete;
+    page_unix(void) = delete;
+
+  public:
+    /**
+     * \brief Acquire a page of the space.
+     * \param fd file descriptor
+     * \param mt mode tags
+     * \param sz size of page instance to request
+     * \param off offset of page from start of file
+     * \param pre_off nominal offset
+     * \return pointer to page instance on success, NULL otherwise
+     */
+    page_unix
+      (int fd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off);
+
+    /**
+     * \brief Destructor; frees the space.
+     * \note The source map instance, which holds the file descriptor,
+     *   remains unaffected by this function.
+     */
+    ~page_unix(void) override;
+
+    /**
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
+     */
+    void* get(void) override;
+
+    /**
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
+     */
+    void const* get(void) const override;
+
+    /**
+     * \brief Check the length of the mapped area.
+     * \return the length of the mapped region exposed by this interface
+     */
+    size_t length(void) const override;
+
+    /**
+     * \brief Check the offset of the mapped area.
+     * \return the offset of the mapped region exposed by this interface
+     * \note Offset is measured from start of source mappable.
+     */
+    size_t offset(void) const override;
+  };
+
   MMAPTWO_PLUS_API
   class mmaptwo_unix : public mmaptwo_i {
   private:
-    unsigned char* ptr;
     size_t len;
-    size_t shift;
+    size_t offnum;
     int fd;
+    struct mode_tag mt;
+
+    mmaptwo_unix(mmaptwo_unix const& ) = delete;
+    mmaptwo_unix& operator=(mmaptwo_unix const& ) = delete;
+    mmaptwo_unix(void) = delete;
 
   public:
     /**
@@ -83,18 +147,12 @@ namespace mmaptwo {
 
   public:
     /**
-     * \brief Acquire a lock to the space.
-     * \param m map instance
-     * \return pointer to locked space on success, NULL otherwise
+     * \brief Acquire a mapping to the space.
+     * \param siz size of the map to acquire
+     * \param off offset into the file data
+     * \return pointer to a page interface on success, NULL otherwise
      */
-    void* acquire(void) override;
-
-    /**
-     * \brief Release a lock of the space.
-     * \param m map instance
-     * \param p pointer of region to release
-     */
-    void release(void* p) override;
+    page_i* acquire(size_t siz, size_t off) override;
 
     /**
      * \brief Check the length of the mapped area.
@@ -102,6 +160,12 @@ namespace mmaptwo {
      * \return the length of the mapped region exposed by this interface
      */
     size_t length(void) const override;
+
+    /**
+     * \brief Check the length of the mappable area.
+     * \return the length of the mappable region exposed by this interface
+     */
+    size_t offset(void) const override;
   };
 
   /**
@@ -500,15 +564,15 @@ namespace mmaptwo {
     return;
   }
 
+  page_i::~page_i(void) {
+    return;
+  }
+
 #if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
   mmaptwo_unix::mmaptwo_unix
     (int fd, struct mode_tag const mt, size_t sz, size_t off)
   {
-    void *ptr;
-    size_t fullsize;
-    size_t fullshift;
-    off_t fulloff;
-    /* assign the close-on-exec flag */ {
+    /* assign the close-on-exec flag */{
       int const old_flags = ::fcntl(fd, F_GETFD);
       int bequeath_break = 0;
       if (old_flags < 0) {
@@ -520,6 +584,7 @@ namespace mmaptwo {
       }
       if (bequeath_break) {
         ::close(fd);
+        errno = EDOM;
         throw std::runtime_error
           ( "mmaptwo::mmaptwo_unix::mmaptwo_unix:"
             " bequeath negotiation failure");
@@ -531,8 +596,53 @@ namespace mmaptwo {
         sz = 0 /*to fail*/;
       else sz = xsz-off;
     }
+    if (sz == 0)/* then fail */ {
+      ::close(fd);
+      errno = EDOM;
+      throw std::runtime_error
+        ( "mmaptwo::mmaptwo_unix::mmaptwo_unix:"
+          " size of zero invalid");
+    }
+    /* initialize the interface */{
+      this->len = sz;
+      this->fd = fd;
+      this->offnum = off;
+      this->mt = mt;
+    }
+    return;
+  }
+
+  mmaptwo_unix::~mmaptwo_unix(void) {
+    ::close(this->fd);
+    this->fd = -1;
+    return;
+  }
+
+  page_i* mmaptwo_unix::acquire(size_t sz, size_t pre_off) {
+    size_t off;
+    /* repair input size and offset */{
+      if (pre_off > this->len
+      ||  sz > this->len - pre_off
+      ||  sz == 0u)
+      {
+        errno = EDOM;
+        throw std::invalid_argument
+          ( "mmaptwo::mmaptwo_unix::mmaptwo_unix: "
+            "size and offset out of range");
+      }
+      off = pre_off + this->offnum;
+    }
+    return new page_unix(fd, mt, sz, off, pre_off);
+  }
+  page_unix::page_unix
+    (int fd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off)
+  {
+    size_t fullsize;
+    size_t fullshift;
+    void *ptr;
+    off_t fulloff;
     /* fix to page sizes */{
-      long const psize = sysconf(_SC_PAGE_SIZE);
+      long const psize = ::sysconf(_SC_PAGE_SIZE);
       fullsize = sz;
       if (psize > 0) {
         /* adjust the offset */
@@ -540,47 +650,55 @@ namespace mmaptwo {
         fulloff = (off_t)(off-fullshift);
         if (fullshift >= ((~(size_t)0u)-sz)) {
           /* range fix failure */
-          close(fd);
           errno = ERANGE;
           throw std::length_error
-            ("mmaptwo::mmaptwo_unix::mmaptwo_unix: range fix failure");
+            ("mmapio::mmapio_unix::mmapio_unix: range fix failure");
         } else fullsize += fullshift;
       } else fulloff = (off_t)off;
     }
-    ptr = mmap(nullptr, fullsize, mode_prot_cvt(mt.mode),
+    ptr = ::mmap(nullptr, fullsize, mode_prot_cvt(mt.mode),
          mode_flag_cvt(mt.privy), fd, fulloff);
     if (!ptr) {
-      close(fd);
       throw std::runtime_error
-        ("mmaptwo::mmaptwo_unix::mmaptwo_unix: mmap failure");
+        ("mmapio::mmapio_unix::mmapio_unix: mmap failure");
     }
     /* initialize the interface */{
-      this->ptr = static_cast<unsigned char*>(ptr);
+      this->ptr = ptr;
       this->len = fullsize;
-      this->fd = fd;
       this->shift = fullshift;
+      this->offnum = pre_off;
     }
-    return;
-  }
-
-  mmaptwo_unix::~mmaptwo_unix(void) {
-    munmap(this->ptr, this->len);
-    this->ptr = nullptr;
-    close(this->fd);
-    this->fd = -1;
-    return;
-  }
-
-  void* mmaptwo_unix::acquire(void) {
-    return this->ptr+this->shift;
-  }
-
-  void mmaptwo_unix::release(void* p) {
     return;
   }
 
   size_t mmaptwo_unix::length(void) const {
+    return this->len;
+  }
+
+  size_t page_unix::length(void) const {
     return this->len-this->shift;
+  }
+
+  size_t mmaptwo_unix::offset(void) const {
+    return this->offnum;
+  }
+
+  size_t page_unix::offset(void) const {
+    return this->offnum;
+  }
+
+  page_unix::~page_unix(void) {
+    ::munmap(this->ptr, this->len);
+    this->ptr = nullptr;
+    return;
+  }
+
+  void* page_unix::get(void) {
+    return static_cast<unsigned char*>(this->ptr)+this->shift;
+  }
+
+  void const* page_unix::get(void) const {
+    return static_cast<unsigned char const*>(this->ptr)+this->shift;
   }
 #elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
   mmaptwo_win32::mmaptwo_win32
@@ -737,6 +855,18 @@ namespace mmaptwo {
     return true;
 #else
     return static_cast<bool>(-1);
+#endif /*MMAPTWO_PLUS_OS*/
+  }
+
+  size_t get_page_size(void) {
+#if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
+    return (size_t)(::sysconf(_SC_PAGE_SIZE));
+#elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
+    ::SYSTEM_INFO s_info;
+    ::GetSystemInfo(&s_info);
+    return (size_t)(s_info.dwAllocationGranularity);
+#else
+    return 1;
 #endif /*MMAPTWO_PLUS_OS*/
   }
   //END   configuration functions
