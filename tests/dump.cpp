@@ -11,7 +11,13 @@ int main(int argc, char **argv) {
   mmaptwo::page_i* pager;
   char const* fname;
   if (argc < 5) {
-    std::cerr << "usage: dump (file) (mode) (length) (offset)" << std::endl;
+    std::cerr <<
+        "usage: dump (file) (mode) (length) (offset) [...]\n"
+        "optional arguments [...]:\n"
+        "  [sublen] [suboff]\n"
+        "        Length and offset for page. Defaults\n"
+        "        to full extent of mappable."
+        << std::endl;
     return EXIT_FAILURE;
   }
   fname = argv[1];
@@ -25,7 +31,13 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   try {
-    pager = mi->acquire(mi->length(), 0);
+    size_t sub_len = (argc>5)
+      ? (size_t)std::strtoul(argv[5],nullptr,0)
+      : mi->length();
+    size_t sub_off = (argc>6)
+      ? (size_t)std::strtoul(argv[6],nullptr,0)
+      : 0u;
+    pager = mi->acquire(sub_len, sub_off);
   } catch (std::exception const& e) {
     delete mi;
     std::cerr << "failed to map file '" << fname << "':" << std::endl;

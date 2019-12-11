@@ -209,16 +209,18 @@ namespace mmaptwo {
 #  include <windows.h>
 #  include <climits>
 #  include <cerrno>
+#  include <cstring>
 
 namespace mmaptwo {
   MMAPTWO_PLUS_API
   class mmaptwo_win32 : public mmaptwo_i {
   private:
-    unsigned char* ptr;
     size_t len;
     size_t shift;
     HANDLE fmd;
     HANDLE fd;
+    size_t offnum;
+    struct mode_tag mt;
 
   public:
     /**
@@ -239,22 +241,83 @@ namespace mmaptwo {
 
   public:
     /**
-     * \brief Acquire a lock to the space.
-     * \return pointer to locked space on success, NULL otherwise
+     * \brief Acquire a mapping to the space.
+     * \param siz size of the map to acquire
+     * \param off offset into the file data
+     * \return pointer to a page interface on success, NULL otherwise
      */
-    void* acquire(void) override;
+    page_i* acquire(size_t siz, size_t off) override;
 
     /**
-     * \brief Release a lock of the space.
-     * \param p pointer of region to release
+     * \brief Check the length of the mapped area.
+     * \param m map instance
+     * \return the length of the mapped region exposed by this interface
      */
-    void release(void* p) override;
+    size_t length(void) const override;
+
+    /**
+     * \brief Check the length of the mappable area.
+     * \return the length of the mappable region exposed by this interface
+     */
+    size_t offset(void) const override;
+  };
+
+  MMAPTWO_PLUS_API
+  class page_win32 : public page_i {
+  private:
+    void* ptr;
+    size_t len;
+    size_t shift;
+    size_t offnum;
+
+    page_win32(page_win32 const& ) = delete;
+    page_win32& operator=(page_win32 const& ) = delete;
+    page_win32(void) = delete;
+
+  public:
+    /**
+     * \brief Acquire a page of the space.
+     * \param fmd file module descriptor
+     * \param mt mode tags
+     * \param sz size of page instance to request
+     * \param off offset of page from start of file
+     * \param pre_off nominal offset
+     * \return pointer to page instance on success, NULL otherwise
+     */
+    page_win32
+      (HANDLE fmd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off);
+
+    /**
+     * \brief Destructor; frees the space.
+     * \note The source map instance, which holds the file descriptor,
+     *   remains unaffected by this function.
+     */
+    ~page_win32(void) override;
+
+    /**
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
+     */
+    void* get(void) override;
+
+    /**
+     * \brief Get a pointer to the space.
+     * \return pointer to space on success, NULL otherwise
+     */
+    void const* get(void) const override;
 
     /**
      * \brief Check the length of the mapped area.
      * \return the length of the mapped region exposed by this interface
      */
     size_t length(void) const override;
+
+    /**
+     * \brief Check the offset of the mapped area.
+     * \return the offset of the mapped region exposed by this interface
+     * \note Offset is measured from start of source mappable.
+     */
+    size_t offset(void) const override;
   };
 
   /**
@@ -263,6 +326,14 @@ namespace mmaptwo {
    * \return an `CreateFile.` desired access flag on success, zero otherwise
    */
   static DWORD mode_rw_cvt(int mmode);
+
+  /**
+   * \brief Convert a mmaptwo mode text to a `CreateFile.`
+   *   creation disposition.
+   * \param mmode the value to convert
+   * \return a `CreateFile.` creation disposition on success, zero otherwise
+   */
+  static DWORD mode_disposition_cvt(int mmode);
 
   /**
    * \brief Convert UTF-8 encoded text to UTF-16 LE text.
@@ -414,6 +485,16 @@ namespace mmaptwo {
       return GENERIC_READ|GENERIC_WRITE;
     case mode_read:
       return GENERIC_READ;
+    default:
+      return 0;
+    }
+  }
+  DWORD mode_disposition_cvt(int mmode) {
+    switch (mmode) {
+    case mode_write:
+      return OPEN_ALWAYS;
+    case mode_read:
+      return OPEN_EXISTING;
     default:
       return 0;
     }
@@ -715,37 +796,37 @@ namespace mmaptwo {
     size_t fulloff;
     size_t extended_size;
     size_t const size_clamp = file_size_e(fd);
-    HANDLE fmd;
-    SECURITY_ATTRIBUTES cfmsa;
+    ::HANDLE fmd;
+    ::SECURITY_ATTRIBUTES cfmsa;
     if (mt.end) /* fix map size */{
       size_t const xsz = size_clamp;
       if (xsz < off) {
         /* reject non-ending zero parameter */
-        CloseHandle(fd);
+        ::CloseHandle(fd);
         throw std::invalid_argument
           ("mmaptwo_win32::mmaptwo_win32: offset too far from start of file");
       } else sz = xsz-off;
     } else if (sz == 0) {
       /* reject non-ending zero parameter */
-      CloseHandle(fd);
+      ::CloseHandle(fd);
       throw std::invalid_argument
         ("mmaptwo_win32::mmaptwo_win32: non-ending zero parameter rejected");
     }
     /* fix to allocation granularity */{
-      DWORD psize;
+      ::DWORD psize;
       /* get the allocation granularity */{
-        SYSTEM_INFO s_info;
-        GetSystemInfo(&s_info);
+        ::SYSTEM_INFO s_info;
+        ::GetSystemInfo(&s_info);
         psize = s_info.dwAllocationGranularity;
       }
       fullsize = sz;
       if (psize > 0) {
         /* adjust the offset */
-        fullshift = off%psize;
+        fullshift = off;
         fulloff = (off-fullshift);
         if (fullshift >= ((~(size_t)0u)-sz)) {
           /* range fix failure */
-          CloseHandle(fd);
+          ::CloseHandle(fd);
           errno = ERANGE;
           throw std::range_error
             ("mmaptwo_win32::mmaptwo_win32: range fix failure");
@@ -762,10 +843,19 @@ namespace mmaptwo {
       }
     }
     /* prepare the security attributes */{
-      memset(&cfmsa, 0, sizeof(cfmsa));
+      std::memset(&cfmsa, 0, sizeof(cfmsa));
       cfmsa.nLength = sizeof(cfmsa);
-      cfmsa.lpSecurityDescriptor = nullptr;
-      cfmsa.bInheritHandle = (BOOL)(mt.bequeath ? TRUE : FALSE);
+      cfmsa.lpSecurityDescriptor = NULL;
+      cfmsa.bInheritHandle = (::BOOL)(mt.bequeath ? TRUE : FALSE);
+    }
+    /* check for potential overflow */{
+      if (fulloff >= ((~(size_t)0u)-extended_size)) {
+        /* range fix failure */
+        ::CloseHandle(fd);
+        errno = ERANGE;
+        throw std::range_error
+          ("mmaptwo_win32::mmaptwo_win32: overflow of size and offset");
+      }
     }
     /* create the file mapping object */{
       /*
@@ -775,64 +865,139 @@ namespace mmaptwo {
       size_t const fullextent = size_clamp > extended_size+fulloff
           ? extended_size + fulloff
           : size_clamp;
-      fmd = CreateFileMappingA(
+      fmd = ::CreateFileMappingA(
           fd, /*hFile*/
           &cfmsa, /*lpFileMappingAttributes*/
           mode_prot_cvt(mt.mode), /*flProtect*/
-          (DWORD)((fullextent>>32)&0xFFffFFff), /*dwMaximumSizeHigh*/
-          (DWORD)(fullextent&0xFFffFFff), /*dwMaximumSizeLow*/
+          (::DWORD)((fullextent>>32)&0xFFffFFff), /*dwMaximumSizeHigh*/
+          (::DWORD)(fullextent&0xFFffFFff), /*dwMaximumSizeLow*/
           nullptr /*lpName*/
         );
     }
     if (fmd == nullptr) {
       /* file mapping failed */
-      CloseHandle(fd);
+      ::CloseHandle(fd);
       throw std::runtime_error
         ("mmaptwo_win32::mmaptwo_win32: CreateFileMappingA fault");
     }
-    ptr = MapViewOfFile(
-        fmd, /*hFileMappingObject*/
-        mode_access_cvt(mt), /*dwDesiredAccess*/
-        (DWORD)((fulloff>>32)&0xFFffFFff), /* dwFileOffsetHigh */
-        (DWORD)(fulloff&0xFFffFFff), /* dwFileOffsetLow */
-        (SIZE_T)(fullsize) /* dwNumberOfBytesToMap */
-      );
-    if (!ptr) {
-      CloseHandle(fmd);
-      CloseHandle(fd);
-      throw std::runtime_error
-        ("mmaptwo_win32::mmaptwo_win32: MapViewOfFile fault");
-    }
     /* initialize the interface */{
-      this->ptr = static_cast<unsigned char*>(ptr);
       this->len = fullsize;
       this->fd = fd;
       this->fmd = fmd;
       this->shift = fullshift;
+      this->offnum = off;
+      this->mt = mt;
     }
     return;
   }
 
   mmaptwo_win32::~mmaptwo_win32(void) {
-    UnmapViewOfFile(this->ptr);
-    this->ptr = nullptr;
-    CloseHandle(this->fmd);
+    ::CloseHandle(this->fmd);
     this->fmd = nullptr;
-    CloseHandle(this->fd);
+    ::CloseHandle(this->fd);
     this->fd = nullptr;
     return;
   }
 
-  void* mmaptwo_win32::acquire(void) {
-    return this->ptr+this->shift;
+  page_i* mmaptwo_win32::acquire(size_t sz, size_t pre_off) {
+    size_t off;
+    /* repair input size and offset */{
+      size_t const shifted_len = this->len - this->shift;
+      if (pre_off > shifted_len
+      ||  sz > shifted_len - pre_off
+      ||  sz == 0u)
+      {
+        errno = EDOM;
+        throw std::invalid_argument
+          ( "mmaptwo::mmaptwo_win32::acquire: "
+            "size and offset out of range");
+      }
+      off = pre_off + this->offnum;
+    }
+    return new page_win32(fmd, mt, sz, off, pre_off);
+  }
+  page_win32::page_win32
+    (HANDLE fmd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off)
+  {
+    size_t fullsize;
+    size_t fullshift;
+    void *ptr;
+    size_t fulloff;
+    /* compute new offsets */{
+      ::DWORD psize;
+      /* get the allocation granularity */{
+        ::SYSTEM_INFO s_info;
+        ::GetSystemInfo(&s_info);
+        psize = s_info.dwAllocationGranularity;
+      }
+      fullsize = sz;
+      if (psize > 0) {
+        /* adjust the offset */
+        fullshift = off%psize;
+        fulloff = (off-fullshift);
+        if (fullshift >= ((~(size_t)0u)-sz)) {
+          /* range fix failure */
+          errno = ERANGE;
+          throw std::length_error
+            ("mmapio::mmapio_win32::page_win32: range fix failure");
+        } else fullsize += fullshift;
+      } else {
+        fulloff = off;
+      }
+    }
+#if 0
+    /* adjust backward to file-mapping object */{
+      fulloff -= (this->offnum - this->shift);
+    }
+#endif /*0*/
+    ptr = ::MapViewOfFile(
+        fmd, /*hFileMappingObject*/
+        mode_access_cvt(mt), /*dwDesiredAccess*/
+        (::DWORD)((fulloff>>32)&0xFFffFFff), /* dwFileOffsetHigh */
+        (::DWORD)(fulloff&0xFFffFFff), /* dwFileOffsetLow */
+        (::SIZE_T)(fullsize) /* dwNumberOfBytesToMap */
+      );
+    if (!ptr) {
+      throw std::runtime_error
+        ("mmapio::mmapio_win32::page_win32: MapViewOfFile failure");
+    }
+    /* initialize the interface */{
+      this->ptr = ptr;
+      this->len = fullsize;
+      this->offnum = pre_off;
+      this->shift = fullshift;
+    }
+    return;
   }
 
-  void mmaptwo_win32::release(void* p) {
+  page_win32::~page_win32(void) {
+    UnmapViewOfFile(this->ptr);
+    this->ptr = nullptr;
     return;
   }
 
   size_t mmaptwo_win32::length(void) const {
     return this->len-this->shift;
+  }
+
+  size_t page_win32::length(void) const {
+    return this->len-this->shift;
+  }
+
+  size_t mmaptwo_win32::offset(void) const {
+    return this->offnum;
+  }
+
+  size_t page_win32::offset(void) const {
+    return this->offnum;
+  }
+
+  void* page_win32::get(void) {
+    return static_cast<unsigned char*>(this->ptr)+this->shift;
+  }
+
+  void const* page_win32::get(void) const {
+    return static_cast<unsigned char const*>(this->ptr)+this->shift;
   }
 #endif /*MMAPTWO_PLUS_OS*/
   //END   public method
@@ -947,7 +1112,7 @@ namespace mmaptwo {
           nm, mode_rw_cvt(mt.mode),
           FILE_SHARE_READ|FILE_SHARE_WRITE,
           &cfsa,
-          OPEN_ALWAYS,
+          mode_disposition_cvt(mt.mode),
           FILE_ATTRIBUTE_NORMAL,
           nullptr
         );
@@ -982,7 +1147,7 @@ namespace mmaptwo {
           wcfn, mode_rw_cvt(mt.mode),
           FILE_SHARE_READ|FILE_SHARE_WRITE,
           &cfsa,
-          OPEN_ALWAYS,
+          mode_disposition_cvt(mt.mode),
           FILE_ATTRIBUTE_NORMAL,
           nullptr
         );
@@ -1013,7 +1178,7 @@ namespace mmaptwo {
           nm, mode_rw_cvt(mt.mode),
           FILE_SHARE_READ|FILE_SHARE_WRITE,
           &cfsa,
-          OPEN_ALWAYS,
+          mode_disposition_cvt(mt.mode),
           FILE_ATTRIBUTE_NORMAL,
           nullptr
         );
