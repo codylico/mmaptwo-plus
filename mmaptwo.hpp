@@ -37,12 +37,29 @@ namespace mmaptwo {
    * \brief File memory access modes.
    */
   enum mode {
+    /**
+     * \brief Open for reading only.
+     */
     mode_read = 0x72,
+    /**
+     * \brief Open for reading and writing.
+     */
     mode_write = 0x77,
+    /**
+     * \brief Map until end of file.
+     * \note When this parameter is active, the open functions
+     *   \link mmaptwo::open \endlink, \link mmaptwo::u8open \endlink and
+     *   \link mmaptwo::wopen \endlink will ignore the size parameter.
+     */
     mode_end = 0x65,
+    /**
+     * \brief Make a private mapping.
+     * \note Changes in pages remain private to the process.
+     */
     mode_private = 0x70,
 
     /**
+     * \brief Allow child processes to inherit this mapping.
      * \note If not using bequeath, the caller of
      *   \link mmaptwo::open \endlink, \link mmaptwo::u8open \endlink or
      *   \link mmaptwo::wopen \endlink must give time for the function
@@ -67,13 +84,13 @@ namespace mmaptwo {
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space
      */
     virtual void* get(void) = 0;
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space
      */
     virtual void const* get(void) const = 0;
 
@@ -99,7 +116,7 @@ namespace mmaptwo {
   public:
     /**
      * \brief Destructor; closes the file.
-     * \note Will not free any acquired pages!
+     * \note The destructor will not free any acquired pages!
      */
     virtual ~mmaptwo_i(void) = 0;
 
@@ -107,7 +124,9 @@ namespace mmaptwo {
      * \brief Acquire a mapping to the space.
      * \param siz size of the map to acquire
      * \param off offset into the file data
-     * \return pointer to a page interface on success, NULL otherwise
+     * \return pointer to a page interface on success, `nullptr` otherwise
+     * \throws `std::bad_alloc`, `std::length_error`, `std::runtime_error`,
+     *   `std::invalid_argument` from the default implementation.
      */
     virtual page_i* acquire(size_t siz, size_t off) = 0;
 
@@ -118,8 +137,8 @@ namespace mmaptwo {
     virtual size_t length(void) const = 0;
 
     /**
-     * \brief Check the length of the mappable area.
-     * \return the length of the mappable region exposed by this interface
+     * \brief Check the offset of the mappable area from start of source file.
+     * \return the offset of this interface's region from start of file
      */
     virtual size_t offset(void) const = 0;
   };
@@ -163,7 +182,9 @@ namespace mmaptwo {
    * \param sz size in bytes of region to provide for mapping
    * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
-   * \return an interface on success, NULL otherwise
+   * \return an interface on success, `nullptr` otherwise
+   * \throws `std::runtime_error`, `std::range_error`, `std::bad_alloc`, and
+   *   `std::invalid_argument`, but only when `throwing` is set to `true`.
    * \note On Windows, this function uses `CreateFileA` directly.
    * \note On Unix, this function uses the `open` system call directly.
    */
@@ -181,7 +202,9 @@ namespace mmaptwo {
    * \param sz size in bytes of region to provide for mapping
    * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
-   * \return an interface on success, NULL otherwise
+   * \return an interface on success, `nullptr` otherwise
+   * \throws `std::runtime_error`, `std::range_error`, `std::bad_alloc`, and
+   *   `std::invalid_argument`, but only when `throwing` is set to `true`.
    * \note On Windows, this function re-encodes the `nm` parameter from
    *   UTF-8 to UTF-16, then uses `CreateFileW` on the result.
    * \note On Unix, this function uses the `open` system call directly.
@@ -200,7 +223,9 @@ namespace mmaptwo {
    * \param sz size in bytes of region to provide for mapping
    * \param off file offset of region to provide for mapping
    * \param throwing whether to pass on exceptions to the caller
-   * \return an interface on success, NULL otherwise
+   * \return an interface on success, `nullptr` otherwise
+   * \throws `std::runtime_error`, `std::range_error`, `std::bad_alloc`, and
+   *   `std::invalid_argument`, but only when `throwing` is set to `true`.
    * \note On Windows, this function uses `CreateFileW` directly.
    * \note On Unix, this function translates the wide string
    *   to a multibyte character string, then passes the result to

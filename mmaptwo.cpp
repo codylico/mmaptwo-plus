@@ -10,16 +10,24 @@
 #include <stdexcept>
 
 namespace mmaptwo {
+  /**
+   * \brief Mode tag for mmaptwo interface, holding various
+   *   mapping configuration values.
+   */
   struct mode_tag {
+    /** \brief access mode (readonly, read-write) */
     char mode;
+    /** \brief map-to-end-of-file flag */
     char end;
+    /** \brief flag for activating private mapping */
     char privy;
+    /** \brief flag for enabling access from child processes */
     char bequeath;
   };
 
   /**
    * \brief Extract a mmaptwo mode tag from a mode text.
-   * \param mmode the value to parse
+   * \param mmode the text to parse
    * \return a mmaptwo mode tag
    */
   static struct mode_tag mode_parse(char const* mmode);
@@ -57,12 +65,19 @@ namespace mmaptwo {
 namespace mmaptwo {
   class mmaptwo_unix;
 
+  /**
+   * \brief Page handler structure for POSIX mmaptwo implementation.
+   */
   MMAPTWO_PLUS_API
   class page_unix : public page_i {
   private:
+    /** \brief `mmap` pointer */
     void* ptr;
+    /** \brief length of space */
     size_t len;
+    /** \brief offset from `ptr` to start of user-requested space */
     size_t shift;
+    /** \brief offset from start of source to user-requested space */
     size_t offnum;
 
     page_unix(page_unix const& ) = delete;
@@ -71,13 +86,13 @@ namespace mmaptwo {
 
   public:
     /**
-     * \brief Acquire a page of the space.
+     * \brief Complete acquisition of a page of space.
      * \param fd file descriptor
      * \param mt mode tags
      * \param sz size of page instance to request
      * \param off offset of page from start of file
      * \param pre_off nominal offset
-     * \return pointer to page instance on success, NULL otherwise
+     * \throws `std::length_error` and `std::runtime_error`
      */
     page_unix
       (int fd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off);
@@ -91,13 +106,13 @@ namespace mmaptwo {
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space
      */
     void* get(void) override;
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space
      */
     void const* get(void) const override;
 
@@ -115,12 +130,19 @@ namespace mmaptwo {
     size_t offset(void) const override;
   };
 
+  /**
+   * \brief File handler structure for POSIX mmaptwo implementation.
+   */
   MMAPTWO_PLUS_API
   class mmaptwo_unix : public mmaptwo_i {
   private:
+    /** \brief length of space */
     size_t len;
+    /** \brief offset from start of file to user-requested source */
     size_t offnum;
+    /** \brief file descriptor */
     int fd;
+    /** \brief open attributes */
     struct mode_tag mt;
 
     mmaptwo_unix(mmaptwo_unix const& ) = delete;
@@ -131,17 +153,17 @@ namespace mmaptwo {
     /**
      * \brief Finish preparing a memory map interface.
      * \param fd file descriptor
-     * \param mmode mode text
+     * \param mmode mode tag
      * \param sz size of range to map
      * \param off offset from start of file
-     * \return an interface on success, NULL otherwise
+     * \throws `std::runtime_error`
      */
     mmaptwo_unix
       (int fd, struct mode_tag const mmode, size_t sz, size_t off);
 
     /**
-     * \brief Destructor; closes the file and frees the space.
-     * \param m map instance
+     * \brief Destructor; closes the file.
+     * \note Closing the file should not affect active pages.
      */
     ~mmaptwo_unix(void) override;
 
@@ -150,20 +172,21 @@ namespace mmaptwo {
      * \brief Acquire a mapping to the space.
      * \param siz size of the map to acquire
      * \param off offset into the file data
-     * \return pointer to a page interface on success, NULL otherwise
+     * \return pointer to a page interface on success, `nullptr` otherwise
+     * \throws `std::invalid_argument`, `std::length_error`,
+     *   and `std::runtime_error`
      */
     page_i* acquire(size_t siz, size_t off) override;
 
     /**
-     * \brief Check the length of the mapped area.
-     * \param m map instance
-     * \return the length of the mapped region exposed by this interface
+     * \brief Check the length of the mappable area.
+     * \return the length of the mappable region exposed by this interface
      */
     size_t length(void) const override;
 
     /**
-     * \brief Check the length of the mappable area.
-     * \return the length of the mappable region exposed by this interface
+     * \brief Check the offset of the mappable area.
+     * \return the offset of the mappable region from start of file
      */
     size_t offset(void) const override;
   };
@@ -171,26 +194,27 @@ namespace mmaptwo {
   /**
    * \brief Convert a wide string to a multibyte string.
    * \param nm the string to convert
-   * \return a multibyte string on success, NULL otherwise
+   * \return a multibyte string on success, `nullptr` otherwise
    */
   static char* wctomb(wchar_t const* nm);
 
   /**
-   * \brief Convert a mmaptwo mode text to a POSIX `open` flag.
-   * \param mmode the value to convert
+   * \brief Convert a mmaptwo mode character to a POSIX `open` flag.
+   * \param mmode the character to convert
    * \return an `open` flag on success, zero otherwise
    */
   static int mode_rw_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode text to a POSIX `mmap` protection flag.
-   * \param mmode the value to convert
+   * \brief Convert a mmaptwo mode character to a POSIX `mmap`
+   *   protection flag.
+   * \param mmode the character to convert
    * \return an `mmap` protection flag on success, zero otherwise
    */
   static int mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode text to a POSIX `mmap` others' flag.
+   * \brief Convert a mmaptwo mode character to a POSIX `mmap` others' flag.
    * \param mprivy the private flag to convert
    * \return an `mmap` others' flag on success, zero otherwise
    */
@@ -212,14 +236,23 @@ namespace mmaptwo {
 #  include <cstring>
 
 namespace mmaptwo {
+  /**
+   * \brief File handler structure for Win32 API mmaptwo implementation.
+   */
   MMAPTWO_PLUS_API
   class mmaptwo_win32 : public mmaptwo_i {
   private:
+    /** \brief length of space, including unrequested leading bytes */
     size_t len;
+    /** \brief number of unrequested leading bytes */
     size_t shift;
+    /** \brief file mapping handle */
     HANDLE fmd;
+    /** \brief file handle */
     HANDLE fd;
+    /** \brief user-requested offset from start of file */
     size_t offnum;
+    /** \brief open attributes */
     struct mode_tag mt;
 
   public:
@@ -229,13 +262,16 @@ namespace mmaptwo {
      * \param mmode mode text
      * \param sz size of range to map
      * \param off offset from start of file
-     * \return an interface on success, NULL otherwise
+     * \throws `std::invalid_argument`, `std::range_error`,
+     *   and `std::runtime_error`
      */
     mmaptwo_win32
       (HANDLE fd, struct mode_tag const mmode, size_t sz, size_t off);
 
     /**
-     * \brief Destructor; closes the file and frees the space.
+     * \brief Destructor; closes the file.
+     * \note This destructor does not destroy, and should not invalidate,
+     *   any active pages.
      */
     ~mmaptwo_win32(void) override;
 
@@ -244,7 +280,9 @@ namespace mmaptwo {
      * \brief Acquire a mapping to the space.
      * \param siz size of the map to acquire
      * \param off offset into the file data
-     * \return pointer to a page interface on success, NULL otherwise
+     * \return pointer to a page interface on success, `nullptr` otherwise
+     * \throws `std::invalid_argument`, `std::runtime_error`,
+     *   and `std::length_error`
      */
     page_i* acquire(size_t siz, size_t off) override;
 
@@ -262,12 +300,19 @@ namespace mmaptwo {
     size_t offset(void) const override;
   };
 
+  /**
+   * \brief Page handler structure for Win32 API mmaptwo implementation.
+   */
   MMAPTWO_PLUS_API
   class page_win32 : public page_i {
   private:
+    /** \brief `MapViewOfFile` pointer */
     void* ptr;
+    /** \brief length of space */
     size_t len;
+    /** \brief offset from `ptr` to start of user-requested space */
     size_t shift;
+    /** \brief user-requested offset from start of source */
     size_t offnum;
 
     page_win32(page_win32 const& ) = delete;
@@ -276,13 +321,13 @@ namespace mmaptwo {
 
   public:
     /**
-     * \brief Acquire a page of the space.
+     * \brief Finish acquiring a page of the space.
      * \param fmd file module descriptor
      * \param mt mode tags
      * \param sz size of page instance to request
      * \param off offset of page from start of file
      * \param pre_off nominal offset
-     * \return pointer to page instance on success, NULL otherwise
+     * \throws `std::length_error` and `std::runtime_error`
      */
     page_win32
       (HANDLE fmd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off);
@@ -296,13 +341,13 @@ namespace mmaptwo {
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space on success
      */
     void* get(void) override;
 
     /**
      * \brief Get a pointer to the space.
-     * \return pointer to space on success, NULL otherwise
+     * \return pointer to space on success
      */
     void const* get(void) const override;
 
@@ -321,16 +366,16 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief Convert a mmaptwo mode text to a `CreateFile.` desired access flag.
-   * \param mmode the value to convert
+   * \brief Convert a mmaptwo mode character to a `CreateFile.` desired access flag.
+   * \param mmode the character to convert
    * \return an `CreateFile.` desired access flag on success, zero otherwise
    */
   static DWORD mode_rw_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode text to a `CreateFile.`
+   * \brief Convert a mmaptwo mode character to a `CreateFile.`
    *   creation disposition.
-   * \param mmode the value to convert
+   * \param mmode the character to convert
    * \return a `CreateFile.` creation disposition on success, zero otherwise
    */
   static DWORD mode_disposition_cvt(int mmode);
@@ -360,17 +405,17 @@ namespace mmaptwo {
   static size_t file_size_e(HANDLE fd);
 
   /**
-   * \brief Convert a mmaptwo mode text to a
+   * \brief Convert a mmaptwo mode character to a
    *   `CreateFileMapping.` protection flag.
-   * \param mmode the value to convert
+   * \param mmode the character to convert
    * \return a `CreateFileMapping.` protection flag on success, zero otherwise
    */
   static DWORD mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode text to a `MapViewOfFile`
+   * \brief Convert a mmaptwo mode tag to a `MapViewOfFile`
    *   desired access flag.
-   * \param mmode the value to convert
+   * \param mmode the tag to convert
    * \return a `MapViewOfFile` desired access flag on success, zero otherwise
    */
   static DWORD mode_access_cvt(struct mode_tag const mt);
@@ -708,7 +753,7 @@ namespace mmaptwo {
       {
         errno = EDOM;
         throw std::invalid_argument
-          ( "mmaptwo::mmaptwo_unix::mmaptwo_unix: "
+          ( "mmaptwo::mmaptwo_unix::acquire: "
             "size and offset out of range");
       }
       off = pre_off + this->offnum;
@@ -733,7 +778,7 @@ namespace mmaptwo {
           /* range fix failure */
           errno = ERANGE;
           throw std::length_error
-            ("mmapio::mmapio_unix::mmapio_unix: range fix failure");
+            ("mmaptwo::page_unix::page_unix: range fix failure");
         } else fullsize += fullshift;
       } else fulloff = (off_t)off;
     }
@@ -741,7 +786,7 @@ namespace mmaptwo {
          mode_flag_cvt(mt.privy), fd, fulloff);
     if (!ptr) {
       throw std::runtime_error
-        ("mmapio::mmapio_unix::mmapio_unix: mmap failure");
+        ("mmaptwo::page_unix::page_unix: mmap failure");
     }
     /* initialize the interface */{
       this->ptr = ptr;
@@ -804,13 +849,15 @@ namespace mmaptwo {
         /* reject non-ending zero parameter */
         ::CloseHandle(fd);
         throw std::invalid_argument
-          ("mmaptwo_win32::mmaptwo_win32: offset too far from start of file");
+          ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
+            "offset too far from start of file");
       } else sz = xsz-off;
     } else if (sz == 0) {
       /* reject non-ending zero parameter */
       ::CloseHandle(fd);
       throw std::invalid_argument
-        ("mmaptwo_win32::mmaptwo_win32: non-ending zero parameter rejected");
+        ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
+          "non-ending zero parameter rejected");
     }
     /* fix to allocation granularity */{
       ::DWORD psize;
@@ -829,7 +876,8 @@ namespace mmaptwo {
           ::CloseHandle(fd);
           errno = ERANGE;
           throw std::range_error
-            ("mmaptwo_win32::mmaptwo_win32: range fix failure");
+            ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
+              "range fix failure");
         } else fullsize += fullshift;
         /* adjust the size */{
           size_t size_shift = (fullsize % psize);
@@ -854,7 +902,8 @@ namespace mmaptwo {
         ::CloseHandle(fd);
         errno = ERANGE;
         throw std::range_error
-          ("mmaptwo_win32::mmaptwo_win32: overflow of size and offset");
+          ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
+            "overflow of size and offset");
       }
     }
     /* create the file mapping object */{
@@ -878,7 +927,8 @@ namespace mmaptwo {
       /* file mapping failed */
       ::CloseHandle(fd);
       throw std::runtime_error
-        ("mmaptwo_win32::mmaptwo_win32: CreateFileMappingA fault");
+        ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
+          "CreateFileMappingA fault");
     }
     /* initialize the interface */{
       this->len = fullsize;
@@ -939,7 +989,7 @@ namespace mmaptwo {
           /* range fix failure */
           errno = ERANGE;
           throw std::length_error
-            ("mmapio::mmapio_win32::page_win32: range fix failure");
+            ("mmapio::page_win32::page_win32: range fix failure");
         } else fullsize += fullshift;
       } else {
         fulloff = off;
@@ -959,7 +1009,7 @@ namespace mmaptwo {
       );
     if (!ptr) {
       throw std::runtime_error
-        ("mmapio::mmapio_win32::page_win32: MapViewOfFile failure");
+        ("mmapio::page_win32::page_win32: MapViewOfFile failure");
     }
     /* initialize the interface */{
       this->ptr = ptr;
@@ -1083,7 +1133,7 @@ namespace mmaptwo {
       char* const mbfn = wctomb(nm);
       if (mbfn == nullptr) {
         /* conversion failure, so give up */
-        throw std::runtime_error("text conversion failure");
+        throw std::runtime_error("mmaptwo::wopen: text conversion failure");
       }
       fd = ::open(mbfn, mode_rw_cvt(mt.mode));
       free(mbfn);
@@ -1117,7 +1167,8 @@ namespace mmaptwo {
           nullptr
         );
       if (fd == INVALID_HANDLE_VALUE) {
-        /* can't open file, so */throw std::runtime_error("can't open file");
+        /* can't open file, so */throw std::runtime_error
+            ("mmaptwo::open: can't open file");
       }
       return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
@@ -1141,7 +1192,8 @@ namespace mmaptwo {
       cfsa.bInheritHandle = (BOOL)(mt.bequeath ? TRUE : FALSE);
       if (wcfn == nullptr) {
         /* conversion failure, so give up */
-        throw std::runtime_error("text conversion failure");
+        throw std::runtime_error
+            ("mmaptwo::u8open: text conversion failure");
       }
       fd = CreateFileW(
           wcfn, mode_rw_cvt(mt.mode),
@@ -1153,7 +1205,8 @@ namespace mmaptwo {
         );
       free(wcfn);
       if (fd == INVALID_HANDLE_VALUE) {
-        /* can't open file, so */throw std::runtime_error("can't open file");
+        /* can't open file, so */throw std::runtime_error
+            ("mmaptwo::u8open: can't open file");
       }
       return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
@@ -1183,7 +1236,8 @@ namespace mmaptwo {
           nullptr
         );
       if (fd == INVALID_HANDLE_VALUE) {
-        /* can't open file, so */throw std::runtime_error("can't open file");
+        /* can't open file, so */throw std::runtime_error
+            ("mmaptwo::wopen: can't open file");
       }
       return new mmaptwo_win32(fd, mt, sz, off);
     } catch (...) {
@@ -1196,7 +1250,8 @@ namespace mmaptwo {
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
-    if (throwing) throw std::runtime_error("unavailable for this system");
+    if (throwing)
+      throw std::runtime_error("mmaptwo::open: unavailable for this system");
     else return nullptr;
   }
 
@@ -1205,7 +1260,8 @@ namespace mmaptwo {
       bool throwing)
   {
     /* no-op */
-    if (throwing) throw std::runtime_error("unavailable for this system");
+    if (throwing)
+      throw std::runtime_error("mmaptwo::u8open: unavailable for this system");
     else return nullptr;
   }
 
@@ -1213,10 +1269,11 @@ namespace mmaptwo {
     (wchar_t const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
-    if (throwing) throw std::runtime_error("unavailable for this system");
+    if (throwing)
+      throw std::runtime_error("mmaptwo::wopen: unavailable for this system");
     else return nullptr;
   }
-#endif /*MMAPTWO_ON_UNIX*/
+#endif /*MMAPTWO_PLUS_OS*/
   //END   open functions
 };
 
