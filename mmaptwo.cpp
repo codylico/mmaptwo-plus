@@ -1246,7 +1246,7 @@ namespace mmaptwo {
     }
   }
 #else
-  mmaptwo_i* mmaptwo_open
+  mmaptwo_i* open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
@@ -1255,7 +1255,7 @@ namespace mmaptwo {
     else return nullptr;
   }
 
-  mmaptwo_i* mmaptwo_u8open
+  mmaptwo_i* u8open
     ( unsigned char const* nm, char const* mode, size_t sz, size_t off,
       bool throwing)
   {
@@ -1265,7 +1265,7 @@ namespace mmaptwo {
     else return nullptr;
   }
 
-  mmaptwo_i* mmaptwo_wopen
+  mmaptwo_i* wopen
     (wchar_t const* nm, char const* mode, size_t sz, size_t off, bool throwing)
   {
     /* no-op */
