@@ -779,7 +779,10 @@ namespace mmaptwo {
           throw std::length_error
             ("mmaptwo::page_unix::page_unix: range fix failure");
         } else fullsize += fullshift;
-      } else fulloff = (off_t)off;
+      } else {
+        fulloff = (off_t)off;
+        fullshift = 0u;
+      }
     }
     ptr = ::mmap(nullptr, fullsize, mode_prot_cvt(mt.mode),
          mode_flag_cvt(mt.privy), fd, fulloff);
@@ -886,6 +889,7 @@ namespace mmaptwo {
         }
       } else {
         fulloff = off;
+        fullshift = 0u;
         extended_size = sz;
       }
     }
@@ -990,6 +994,7 @@ namespace mmaptwo {
             ("mmapio::page_win32::page_win32: range fix failure");
         } else fullsize += fullshift;
       } else {
+        fullshift = 0u;
         fulloff = off;
       }
     }
