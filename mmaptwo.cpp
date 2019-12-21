@@ -643,9 +643,10 @@ namespace mmaptwo {
     BOOL res = GetFileSizeEx(fd, &sz);
     if (res) {
 #if (defined ULLONG_MAX)
-      return (size_t)sz.QuadPart;
+      return static_cast<size_t>(sz.QuadPart);
 #else
-      return (size_t)((sz.u.LowPart)|(sz.u.HighPart<<32));
+      return static_cast<size_t>(sz.u.LowPart)
+        |    (static_cast<size_t>(sz.u.HighPart)<<32);
 #endif /*ULLONG_MAX*/
     } else return 0u;
   }
