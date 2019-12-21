@@ -244,8 +244,6 @@ namespace mmaptwo {
   private:
     /** \brief length of space, including unrequested leading bytes */
     size_t len;
-    /** \brief number of unrequested leading bytes */
-    size_t shift;
     /** \brief file mapping handle */
     HANDLE fmd;
     /** \brief file handle */
@@ -934,7 +932,6 @@ namespace mmaptwo {
       this->len = fullsize;
       this->fd = fd;
       this->fmd = fmd;
-      this->shift = fullshift;
       this->offnum = off;
       this->mt = mt;
     }
@@ -952,7 +949,7 @@ namespace mmaptwo {
   page_i* mmaptwo_win32::acquire(size_t sz, size_t pre_off) {
     size_t off;
     /* repair input size and offset */{
-      size_t const shifted_len = this->len - this->shift;
+      size_t const shifted_len = this->len - this->offnum;
       if (pre_off > shifted_len
       ||  sz > shifted_len - pre_off
       ||  sz == 0u)
@@ -995,11 +992,6 @@ namespace mmaptwo {
         fulloff = off;
       }
     }
-#if 0
-    /* adjust backward to file-mapping object */{
-      fulloff -= (this->offnum - this->shift);
-    }
-#endif /*0*/
     ptr = ::MapViewOfFile(
         fmd, /*hFileMappingObject*/
         mode_access_cvt(mt), /*dwDesiredAccess*/
@@ -1027,7 +1019,7 @@ namespace mmaptwo {
   }
 
   size_t mmaptwo_win32::length(void) const {
-    return this->len-this->shift;
+    return this->len-this->offnum;
   }
 
   size_t page_win32::length(void) const {
