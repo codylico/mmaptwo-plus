@@ -11,7 +11,7 @@
 
 namespace mmaptwo {
   /**
-   * \brief Mode tag for mmaptwo interface, holding various
+   * \brief Mode tag for `mmaptwo` interface, holding various
    *   mapping configuration values.
    */
   struct mode_tag {
@@ -26,9 +26,9 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief Extract a mmaptwo mode tag from a mode text.
+   * \brief Extract a `mmaptwo` mode tag from a mode text.
    * \param mmode the text to parse
-   * \return a mmaptwo mode tag
+   * \return a `mmaptwo` mode tag
    */
   static struct mode_tag mode_parse(char const* mmode);
 };
@@ -66,7 +66,7 @@ namespace mmaptwo {
   class mmaptwo_unix;
 
   /**
-   * \brief Page handler structure for POSIX mmaptwo implementation.
+   * \brief Page handler structure for POSIX `mmaptwo` implementation.
    */
   MMAPTWO_PLUS_API
   class page_unix : public page_i {
@@ -131,7 +131,7 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief File handler structure for POSIX mmaptwo implementation.
+   * \brief File handler structure for POSIX `mmaptwo` implementation.
    */
   MMAPTWO_PLUS_API
   class mmaptwo_unix : public mmaptwo_i {
@@ -199,14 +199,14 @@ namespace mmaptwo {
   static char* wctomb(wchar_t const* nm);
 
   /**
-   * \brief Convert a mmaptwo mode character to a POSIX `open` flag.
+   * \brief Convert a `mmaptwo` mode character to a POSIX `open` flag.
    * \param mmode the character to convert
    * \return an `open` flag on success, zero otherwise
    */
   static int mode_rw_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode character to a POSIX `mmap`
+   * \brief Convert a `mmaptwo` mode character to a POSIX `mmap`
    *   protection flag.
    * \param mmode the character to convert
    * \return an `mmap` protection flag on success, zero otherwise
@@ -214,7 +214,7 @@ namespace mmaptwo {
   static int mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode character to a POSIX `mmap` others' flag.
+   * \brief Convert a `mmaptwo` mode character to a POSIX `mmap` others' flag.
    * \param mprivy the private flag to convert
    * \return an `mmap` others' flag on success, zero otherwise
    */
@@ -237,7 +237,7 @@ namespace mmaptwo {
 
 namespace mmaptwo {
   /**
-   * \brief File handler structure for Win32 API mmaptwo implementation.
+   * \brief File handler structure for Win32 API `mmaptwo` implementation.
    */
   MMAPTWO_PLUS_API
   class mmaptwo_win32 : public mmaptwo_i {
@@ -299,7 +299,7 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief Page handler structure for Win32 API mmaptwo implementation.
+   * \brief Page handler structure for Win32 API `mmaptwo` implementation.
    */
   MMAPTWO_PLUS_API
   class page_win32 : public page_i {
@@ -364,14 +364,15 @@ namespace mmaptwo {
   };
 
   /**
-   * \brief Convert a mmaptwo mode character to a `CreateFile.` desired access flag.
+   * \brief Convert a `mmaptwo` mode character to a `CreateFile.`
+   *   desired access flag.
    * \param mmode the character to convert
    * \return an `CreateFile.` desired access flag on success, zero otherwise
    */
   static DWORD mode_rw_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode character to a `CreateFile.`
+   * \brief Convert a `mmaptwo` mode character to a `CreateFile.`
    *   creation disposition.
    * \param mmode the character to convert
    * \return a `CreateFile.` creation disposition on success, zero otherwise
@@ -403,7 +404,7 @@ namespace mmaptwo {
   static size_t file_size_e(HANDLE fd);
 
   /**
-   * \brief Convert a mmaptwo mode character to a
+   * \brief Convert a `mmaptwo` mode character to a
    *   `CreateFileMapping.` protection flag.
    * \param mmode the character to convert
    * \return a `CreateFileMapping.` protection flag on success, zero otherwise
@@ -411,7 +412,7 @@ namespace mmaptwo {
   static DWORD mode_prot_cvt(int mmode);
 
   /**
-   * \brief Convert a mmaptwo mode tag to a `MapViewOfFile`
+   * \brief Convert a `mmaptwo` mode tag to a `MapViewOfFile`
    *   desired access flag.
    * \param mmode the tag to convert
    * \return a `MapViewOfFile` desired access flag on success, zero otherwise
