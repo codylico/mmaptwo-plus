@@ -108,26 +108,26 @@ namespace mmaptwo {
      * \brief Get a pointer to the space.
      * \return pointer to space
      */
-    void* get(void) override;
+    void* get(void) noexcept override;
 
     /**
      * \brief Get a pointer to the space.
      * \return pointer to space
      */
-    void const* get(void) const override;
+    void const* get(void) const noexcept override;
 
     /**
      * \brief Check the length of the mapped area.
      * \return the length of the mapped region exposed by this interface
      */
-    size_t length(void) const override;
+    size_t length(void) const noexcept override;
 
     /**
      * \brief Check the offset of the mapped area.
      * \return the offset of the mapped region exposed by this interface
      * \note Offset is measured from start of source mappable.
      */
-    size_t offset(void) const override;
+    size_t offset(void) const noexcept override;
   };
 
   /**
@@ -182,13 +182,13 @@ namespace mmaptwo {
      * \brief Check the length of the mappable area.
      * \return the length of the mappable region exposed by this interface
      */
-    size_t length(void) const override;
+    size_t length(void) const noexcept override;
 
     /**
      * \brief Check the offset of the mappable area.
      * \return the offset of the mappable region from start of file
      */
-    size_t offset(void) const override;
+    size_t offset(void) const noexcept override;
   };
 
   /**
@@ -289,13 +289,13 @@ namespace mmaptwo {
      * \param m map instance
      * \return the length of the mapped region exposed by this interface
      */
-    size_t length(void) const override;
+    size_t length(void) const noexcept override;
 
     /**
      * \brief Check the length of the mappable area.
      * \return the length of the mappable region exposed by this interface
      */
-    size_t offset(void) const override;
+    size_t offset(void) const noexcept override;
   };
 
   /**
@@ -341,26 +341,26 @@ namespace mmaptwo {
      * \brief Get a pointer to the space.
      * \return pointer to space on success
      */
-    void* get(void) override;
+    void* get(void) noexcept override;
 
     /**
      * \brief Get a pointer to the space.
      * \return pointer to space on success
      */
-    void const* get(void) const override;
+    void const* get(void) const noexcept override;
 
     /**
      * \brief Check the length of the mapped area.
      * \return the length of the mapped region exposed by this interface
      */
-    size_t length(void) const override;
+    size_t length(void) const noexcept override;
 
     /**
      * \brief Check the offset of the mapped area.
      * \return the offset of the mapped region exposed by this interface
      * \note Offset is measured from start of source mappable.
      */
-    size_t offset(void) const override;
+    size_t offset(void) const noexcept override;
   };
 
   /**
@@ -799,19 +799,19 @@ namespace mmaptwo {
     return;
   }
 
-  size_t mmaptwo_unix::length(void) const {
+  size_t mmaptwo_unix::length(void) const noexcept {
     return this->len;
   }
 
-  size_t page_unix::length(void) const {
+  size_t page_unix::length(void) const noexcept {
     return this->len-this->shift;
   }
 
-  size_t mmaptwo_unix::offset(void) const {
+  size_t mmaptwo_unix::offset(void) const noexcept {
     return this->offnum;
   }
 
-  size_t page_unix::offset(void) const {
+  size_t page_unix::offset(void) const noexcept {
     return this->offnum;
   }
 
@@ -821,11 +821,11 @@ namespace mmaptwo {
     return;
   }
 
-  void* page_unix::get(void) {
+  void* page_unix::get(void) noexcept {
     return static_cast<unsigned char*>(this->ptr)+this->shift;
   }
 
-  void const* page_unix::get(void) const {
+  void const* page_unix::get(void) const noexcept {
     return static_cast<unsigned char const*>(this->ptr)+this->shift;
   }
 #elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32
@@ -1024,27 +1024,27 @@ namespace mmaptwo {
     return;
   }
 
-  size_t mmaptwo_win32::length(void) const {
+  size_t mmaptwo_win32::length(void) const noexcept {
     return this->len-this->offnum;
   }
 
-  size_t page_win32::length(void) const {
+  size_t page_win32::length(void) const noexcept {
     return this->len-this->shift;
   }
 
-  size_t mmaptwo_win32::offset(void) const {
+  size_t mmaptwo_win32::offset(void) const noexcept {
     return this->offnum;
   }
 
-  size_t page_win32::offset(void) const {
+  size_t page_win32::offset(void) const noexcept {
     return this->offnum;
   }
 
-  void* page_win32::get(void) {
+  void* page_win32::get(void) noexcept {
     return static_cast<unsigned char*>(this->ptr)+this->shift;
   }
 
-  void const* page_win32::get(void) const {
+  void const* page_win32::get(void) const noexcept {
     return static_cast<unsigned char const*>(this->ptr)+this->shift;
   }
 #endif /*MMAPTWO_PLUS_OS*/
@@ -1053,11 +1053,11 @@ namespace mmaptwo {
 
 namespace mmaptwo {
   //BEGIN configuration functions
-  int get_os(void) {
+  int get_os(void) noexcept {
     return (int)(MMAPTWO_PLUS_OS);
   }
 
-  bool check_bequeath_stop(void) {
+  bool check_bequeath_stop(void) noexcept {
 #if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
 #  if (defined O_CLOEXEC)
     return true;
@@ -1071,7 +1071,7 @@ namespace mmaptwo {
 #endif /*MMAPTWO_PLUS_OS*/
   }
 
-  size_t get_page_size(void) {
+  size_t get_page_size(void) noexcept {
 #if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
     return (size_t)(::sysconf(_SC_PAGE_SIZE));
 #elif MMAPTWO_PLUS_OS == MMAPTWO_OS_WIN32

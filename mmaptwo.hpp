@@ -86,26 +86,26 @@ namespace mmaptwo {
      * \brief Get a pointer to the space.
      * \return pointer to space
      */
-    virtual void* get(void) = 0;
+    virtual void* get(void) noexcept = 0;
 
     /**
      * \brief Get a pointer to the space.
      * \return pointer to space
      */
-    virtual void const* get(void) const = 0;
+    virtual void const* get(void) const noexcept = 0;
 
     /**
      * \brief Check the length of the mapped area.
      * \return the length of the mapped region exposed by this interface
      */
-    virtual size_t length(void) const = 0;
+    virtual size_t length(void) const noexcept = 0;
 
     /**
      * \brief Check the offset of the mapped area.
      * \return the offset of the mapped region exposed by this interface
      * \note Offset is measured from start of source mappable.
      */
-    virtual size_t offset(void) const = 0;
+    virtual size_t offset(void) const noexcept = 0;
   };
 
   /**
@@ -134,13 +134,13 @@ namespace mmaptwo {
      * \brief Check the length of the mappable area.
      * \return the length of the mappable region exposed by this interface
      */
-    virtual size_t length(void) const = 0;
+    virtual size_t length(void) const noexcept = 0;
 
     /**
      * \brief Check the offset of the mappable area from start of source file.
      * \return the offset of this interface's region from start of file
      */
-    virtual size_t offset(void) const = 0;
+    virtual size_t offset(void) const noexcept = 0;
   };
 
 
@@ -150,7 +150,7 @@ namespace mmaptwo {
    * \return a \link mmaptwo::os \endlink value
    */
   MMAPTWO_PLUS_API
-  int get_os(void);
+  int get_os(void) noexcept;
 
   /**
    * \brief Check whether the library can handle possible race conditions
@@ -160,7 +160,7 @@ namespace mmaptwo {
    *   otherwise
    */
   MMAPTWO_PLUS_API
-  bool check_bequeath_stop(void);
+  bool check_bequeath_stop(void) noexcept;
 
   /**
    * \brief Check what this library thinks the page size is.
@@ -169,7 +169,7 @@ namespace mmaptwo {
    *   to use the library.
    */
   MMAPTWO_PLUS_API
-  size_t get_page_size(void);
+  size_t get_page_size(void) noexcept;
   /* END   configurations */
 
   /* BEGIN open functions */

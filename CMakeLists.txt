@@ -9,7 +9,7 @@ set(MMAPTWO_PLUS_OS CACHE STRING "Target memory mapping API.")
 
 add_library(mmaptwo_plus "mmaptwo.cpp" "mmaptwo.hpp")
 target_compile_features(mmaptwo_plus PRIVATE
-    cxx_override cxx_nullptr cxx_constexpr
+    cxx_override cxx_nullptr cxx_constexpr cxx_noexcept
   )
 if (MMAPTWO_PLUS_OS GREATER -1)
   target_compile_definitions(mmaptwo_plus
