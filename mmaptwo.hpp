@@ -72,8 +72,7 @@ namespace mmaptwo {
   /**
    * \brief Memory reading part of memory-mapped input-output interface.
    */
-  MMAPTWO_PLUS_API
-  class page_i {
+  class MMAPTWO_PLUS_API page_i {
   public:
     /**
      * \brief Destructor; frees the space.
@@ -111,8 +110,7 @@ namespace mmaptwo {
   /**
    * \brief File acquisition part of memory-mapped input-output interface.
    */
-  MMAPTWO_PLUS_API
-  class mmaptwo_i {
+  class MMAPTWO_PLUS_API mmaptwo_i {
   public:
     /**
      * \brief Destructor; closes the file.
