@@ -15,6 +15,10 @@ if (MMAPTWO_PLUS_OS GREATER -1)
   target_compile_definitions(mmaptwo_plus
     PRIVATE "MMAPTWO_PLUS_OS=${MMAPTWO_PLUS_OS}")
 endif (MMAPTWO_PLUS_OS GREATER -1)
+if (WIN32 AND BUILD_SHARED_LIBS)
+  target_compile_definitions(mmaptwo_plus
+    PUBLIC "MMAPTWO_PLUS_WIN32_DLL")
+endif(WIN32 AND BUILD_SHARED_LIBS)
 
 if (BUILD_TESTING)
   add_executable(mmaptwo_plus_dump "tests/dump.cpp")
