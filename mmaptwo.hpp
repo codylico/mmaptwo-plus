@@ -141,6 +141,21 @@ namespace mmaptwo {
     virtual size_t offset(void) const noexcept = 0;
   };
 
+  /* BEGIN error handling */
+  /**
+   * \brief Get the `errno` value from this library.
+   * \return an error number
+   */
+  MMAPTWO_PLUS_API
+  int get_errno(void) noexcept;
+
+  /**
+   * \brief Set an `errno` value to this library.
+   * \param x the value to set
+   */
+  MMAPTWO_PLUS_API
+  void set_errno(int x) noexcept;
+  /* END   error handling */
 
   /* BEGIN configurations */
   /**

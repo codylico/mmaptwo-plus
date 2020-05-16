@@ -5,6 +5,7 @@
 #include <limits>
 #include <cctype>
 #include <iomanip>
+#include <system_error>
 
 int main(int argc, char **argv) {
   mmaptwo::mmaptwo_i* mi;
@@ -38,6 +39,8 @@ int main(int argc, char **argv) {
       ? (size_t)std::strtoul(argv[6],nullptr,0)
       : 0u;
     pager = mi->acquire(sub_len, sub_off);
+    if (!pager)
+      throw std::system_error(mmaptwo::get_errno(), std::generic_category());
   } catch (std::exception const& e) {
     delete mi;
     std::cerr << "failed to map file '" << fname << "':" << std::endl;

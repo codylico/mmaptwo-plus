@@ -8,6 +8,7 @@
 #include "mmaptwo.hpp"
 #include <cstdlib>
 #include <stdexcept>
+#include <cerrno>
 
 namespace mmaptwo {
   /**
@@ -59,7 +60,6 @@ namespace mmaptwo {
 #  include <fcntl.h>
 #  include <sys/mman.h>
 #  include <sys/stat.h>
-#  include <cerrno>
 #  include <limits>
 
 namespace mmaptwo {
@@ -232,7 +232,6 @@ namespace mmaptwo {
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <climits>
-#  include <cerrno>
 #  include <cstring>
 
 namespace mmaptwo {
@@ -1053,6 +1052,17 @@ namespace mmaptwo {
 };
 
 namespace mmaptwo {
+  //BEGIN error handling
+  int get_errno(void) noexcept {
+    return errno;
+  }
+
+  void set_errno(int x) noexcept {
+    errno = x;
+    return;
+  }
+  //END   error handling
+
   //BEGIN configuration functions
   int get_os(void) noexcept {
     return (int)(MMAPTWO_PLUS_OS);
