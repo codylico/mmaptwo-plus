@@ -723,8 +723,8 @@ namespace mmaptwo {
     }
     if (sz == 0)/* then fail */ {
       ::close(fd);
-      errno = EDOM;
-      throw std::runtime_error
+      errno = ERANGE;
+      throw std::range_error
         ( "mmaptwo::mmaptwo_unix::mmaptwo_unix:"
           " size of zero invalid");
     }
@@ -850,6 +850,7 @@ namespace mmaptwo {
       if (xsz < off) {
         /* reject non-ending zero parameter */
         ::CloseHandle(fd);
+        errno = ERANGE;
         throw std::invalid_argument
           ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
             "offset too far from start of file");
@@ -857,6 +858,11 @@ namespace mmaptwo {
     } else if (sz == 0) {
       /* reject non-ending zero parameter */
       ::CloseHandle(fd);
+#if (defined EINVAL)
+      errno = EINVAL;
+#else
+      errno = EDOM;
+#endif /*EINVAL*/
       throw std::invalid_argument
         ( "mmaptwo::mmaptwo_win32::mmaptwo_win32: "
           "non-ending zero parameter rejected");
@@ -1006,6 +1012,12 @@ namespace mmaptwo {
         (::SIZE_T)(fullsize) /* dwNumberOfBytesToMap */
       );
     if (!ptr) {
+#if (defined ENOMEM)
+      errno = ENOMEM;
+#else
+      if (errno == 0)
+        errno = ERANGE;
+#endif /*ENOMEM*/
       throw std::runtime_error
         ("mmapio::page_win32::page_win32: MapViewOfFile failure");
     }
