@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
   }
   /* output the data */{
     size_t len = pager->length();
+    size_t const off = pager->offset();
     unsigned char* bytes = (unsigned char*)pager->get();
     if (bytes != NULL) {
       size_t i;
@@ -58,7 +59,8 @@ int main(int argc, char **argv) {
         size_t j = 0;
         if (i)
           std::cout << std::endl;
-        std::cout << std::setw(4) << std::setbase(16) << i << ':';
+        std::cout << std::setw(4) << std::setbase(16) << std::setfill('0')
+          << static_cast<long unsigned int>(i + off) << ':';
         for (j = 0; j < 16; ++j) {
           if (j%4 == 0) {
             std::cout << " ";
