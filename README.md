@@ -22,7 +22,7 @@ Unix and Windows. The target API language is C++ 2011. In addition:
 
 ## Build
 
-This project will use CMake for building. Developers can obtain CMake from
+This project uses CMake for building. Developers can obtain CMake from
 the following URL:
 [https://cmake.org/download/](https://cmake.org/download/)
 
@@ -32,7 +32,7 @@ On UNIX, the commands would look like the following:
 ```
 mkdir build
 cd build
-cmake ../mmapio
+cmake ../mmaptwo-plus
 ```
 
 Running CMake should create a build project, which then can be processed
