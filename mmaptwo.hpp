@@ -123,10 +123,8 @@ namespace mmaptwo {
      * \param siz size of the map to acquire
      * \param off offset into the file data
      * \return pointer to a page interface on success, `nullptr` otherwise
-     * \throws `std::bad_alloc`, `std::length_error`, `std::runtime_error`,
-     *   `std::invalid_argument` from the default implementation.
      */
-    virtual page_i* acquire(size_t siz, size_t off) = 0;
+    virtual page_i* acquire(size_t siz, size_t off) noexcept = 0;
 
     /**
      * \brief Check the length of the mappable area.

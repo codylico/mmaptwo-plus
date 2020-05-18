@@ -173,10 +173,8 @@ namespace mmaptwo {
      * \param siz size of the map to acquire
      * \param off offset into the file data
      * \return pointer to a page interface on success, `nullptr` otherwise
-     * \throws `std::invalid_argument`, `std::length_error`,
-     *   and `std::runtime_error`
      */
-    page_i* acquire(size_t siz, size_t off) override;
+    page_i* acquire(size_t siz, size_t off) noexcept override;
 
     /**
      * \brief Check the length of the mappable area.
@@ -281,7 +279,7 @@ namespace mmaptwo {
      * \throws `std::invalid_argument`, `std::runtime_error`,
      *   and `std::length_error`
      */
-    page_i* acquire(size_t siz, size_t off) override;
+    page_i* acquire(size_t siz, size_t off) noexcept override;
 
     /**
      * \brief Check the length of the mapped area.
@@ -743,7 +741,7 @@ namespace mmaptwo {
     return;
   }
 
-  page_i* mmaptwo_unix::acquire(size_t sz, size_t pre_off) {
+  page_i* mmaptwo_unix::acquire(size_t sz, size_t pre_off) noexcept {
     size_t off;
     /* repair input size and offset */{
       if (pre_off > this->len
@@ -751,14 +749,23 @@ namespace mmaptwo {
       ||  sz == 0u)
       {
         errno = EDOM;
-        throw std::invalid_argument
-          ( "mmaptwo::mmaptwo_unix::acquire: "
-            "size and offset out of range");
+        return nullptr;
       }
       off = pre_off + this->offnum;
     }
-    return new page_unix(fd, mt, sz, off, pre_off);
+    try {
+      return new page_unix(fd, mt, sz, off, pre_off);
+    } catch (std::length_error const& ) {
+      return nullptr;
+    } catch (std::runtime_error const& ) {
+      return nullptr;
+    } catch (std::bad_alloc const& ) {
+      if (errno == 0)
+        errno = ENOMEM;
+      return nullptr;
+    }
   }
+
   page_unix::page_unix
     (int fd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off)
   {
@@ -957,7 +964,7 @@ namespace mmaptwo {
     return;
   }
 
-  page_i* mmaptwo_win32::acquire(size_t sz, size_t pre_off) {
+  page_i* mmaptwo_win32::acquire(size_t sz, size_t pre_off) noexcept {
     size_t off;
     /* repair input size and offset */{
       size_t const shifted_len = this->len - this->offnum;
@@ -966,13 +973,25 @@ namespace mmaptwo {
       ||  sz == 0u)
       {
         errno = EDOM;
-        throw std::invalid_argument
-          ( "mmaptwo::mmaptwo_win32::acquire: "
-            "size and offset out of range");
+        return nullptr;
       }
       off = pre_off + this->offnum;
     }
-    return new page_win32(fmd, mt, sz, off, pre_off);
+    try {
+      return new page_win32(fmd, mt, sz, off, pre_off);
+    } catch (std::bad_alloc const& ) {
+#if (defined ENOMEM)
+      errno = ENOMEM;
+#else
+      if (errno == 0)
+        errno = ERANGE;
+#endif /*ENOMEM*/
+      return nullptr;
+    } catch (std::length_error const& ) {
+      return nullptr;
+    } catch (std::runtime_error const& ) {
+      return nullptr;
+    }
   }
   page_win32::page_win32
     (HANDLE fmd, struct mode_tag mt, size_t sz, size_t off, size_t pre_off)
