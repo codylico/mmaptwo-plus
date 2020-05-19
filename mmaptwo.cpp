@@ -793,7 +793,7 @@ namespace mmaptwo {
     }
     ptr = ::mmap(nullptr, fullsize, mode_prot_cvt(mt.mode),
          mode_flag_cvt(mt.privy), fd, fulloff);
-    if (!ptr) {
+    if (ptr == MAP_FAILED) {
       throw std::runtime_error
         ("mmaptwo::page_unix::page_unix: mmap failure");
     }
