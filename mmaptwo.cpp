@@ -6,8 +6,9 @@
 #define MMAPTWO_PLUS_WIN32_DLL_INTERNAL
 #define _POSIX_C_SOURCE 200809L
 #include "mmaptwo.hpp"
-#include <cstdlib>
 #include <stdexcept>
+#include <new>
+#include <cstdlib>
 #include <cerrno>
 
 namespace mmaptwo {
