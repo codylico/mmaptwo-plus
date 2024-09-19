@@ -8,7 +8,7 @@ option(BUILD_SHARED_LIBS "Enable shared library construction.")
 set(MMAPTWO_PLUS_OS CACHE STRING "Target memory mapping API.")
 
 add_library(mmaptwo_plus "mmaptwo.cpp" "mmaptwo.hpp")
-target_compile_features(mmaptwo_plus PRIVATE
+target_compile_features(mmaptwo_plus PUBLIC
     cxx_override cxx_nullptr cxx_constexpr cxx_noexcept
   )
 if (MMAPTWO_PLUS_OS GREATER -1)
