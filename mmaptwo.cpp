@@ -1,4 +1,4 @@
-/*
+/**
  * \file mmaptwo.cpp
  * \brief Memory-mapped files
  * \author Cody Licorish (svgmovement@gmail.com)
@@ -420,7 +420,7 @@ namespace mmaptwo {
 #endif /*MMAPTWO_PLUS_OS*/
 
 namespace mmaptwo {
-  //BEGIN static functions
+#pragma region "static functions"
   struct mode_tag mode_parse(char const* mmode) {
     struct mode_tag out = { 0, 0, 0, 0 };
     int i;
@@ -679,11 +679,11 @@ namespace mmaptwo {
     return flags;
   }
 #endif /*MMAPTWO_PLUS_OS*/
-  //END   static functions
+#pragma endregion
 };
 
 namespace mmaptwo {
-  //BEGIN public methods
+#pragma region "public methods"
   mmaptwo_i::~mmaptwo_i(void) {
     return;
   }
@@ -1080,11 +1080,11 @@ namespace mmaptwo {
     return static_cast<unsigned char const*>(this->ptr)+this->shift;
   }
 #endif /*MMAPTWO_PLUS_OS*/
-  //END   public method
+#pragma endregion
 };
 
 namespace mmaptwo {
-  //BEGIN error handling
+#pragma region "error handling"
   int get_errno(void) noexcept {
     return errno;
   }
@@ -1093,9 +1093,9 @@ namespace mmaptwo {
     errno = x;
     return;
   }
-  //END   error handling
+#pragma endregion
 
-  //BEGIN configuration functions
+#pragma region "configuration functions"
   int get_os(void) noexcept {
     return (int)(MMAPTWO_PLUS_OS);
   }
@@ -1125,9 +1125,9 @@ namespace mmaptwo {
     return 1;
 #endif /*MMAPTWO_PLUS_OS*/
   }
-  //END   configuration functions
+#pragma endregion
 
-  //BEGIN open functions
+#pragma region "open functions"
 #if MMAPTWO_PLUS_OS == MMAPTWO_OS_UNIX
   mmaptwo_i* open
     (char const* nm, char const* mode, size_t sz, size_t off, bool throwing)
@@ -1315,6 +1315,6 @@ namespace mmaptwo {
     else return nullptr;
   }
 #endif /*MMAPTWO_PLUS_OS*/
-  //END   open functions
+#pragma endregion
 };
 
