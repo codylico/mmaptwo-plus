@@ -1,4 +1,4 @@
-/*
+/**
  * \file mmaptwo.hpp
  * \brief Memory-mapped files
  * \author Cody Licorish (svgmovement@gmail.com)
@@ -139,7 +139,7 @@ namespace mmaptwo {
     virtual size_t offset(void) const noexcept = 0;
   };
 
-  /* BEGIN error handling */
+#pragma region "error handling"
   /**
    * \brief Get the `errno` value from this library.
    * \return an error number
@@ -153,9 +153,9 @@ namespace mmaptwo {
    */
   MMAPTWO_PLUS_API
   void set_errno(int x) noexcept;
-  /* END   error handling */
+#pragma endregion
 
-  /* BEGIN configurations */
+#pragma region "configurations"
   /**
    * \brief Check the library's target backend.
    * \return a \link mmaptwo::os \endlink value
@@ -181,9 +181,9 @@ namespace mmaptwo {
    */
   MMAPTWO_PLUS_API
   size_t get_page_size(void) noexcept;
-  /* END   configurations */
+#pragma endregion
 
-  /* BEGIN open functions */
+#pragma region "open functions"
   /**
    * \brief Open a file using a narrow character name.
    * \param nm name of file to map
@@ -246,7 +246,7 @@ namespace mmaptwo {
   mmaptwo_i* wopen
     ( wchar_t const* nm, char const* mode, size_t sz, size_t off,
       bool throwing=true);
-  /* END   open functions */
+#pragma endregion
 };
 
 #endif /*hg_MMapTwo_Plus_mmapTwo_H_*/
