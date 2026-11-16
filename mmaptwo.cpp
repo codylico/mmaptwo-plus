@@ -237,8 +237,7 @@ namespace mmaptwo {
   /**
    * \brief File handler structure for Win32 API `mmaptwo` implementation.
    */
-  MMAPTWO_PLUS_API
-  class mmaptwo_win32 : public mmaptwo_i {
+  class MMAPTWO_PLUS_API mmaptwo_win32 : public mmaptwo_i {
   private:
     /** \brief length of space, including unrequested leading bytes */
     size_t len;
@@ -299,8 +298,7 @@ namespace mmaptwo {
   /**
    * \brief Page handler structure for Win32 API `mmaptwo` implementation.
    */
-  MMAPTWO_PLUS_API
-  class page_win32 : public page_i {
+  class MMAPTWO_PLUS_API page_win32 : public page_i {
   private:
     /** \brief `MapViewOfFile` pointer */
     void* ptr;
